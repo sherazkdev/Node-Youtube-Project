@@ -1,5 +1,5 @@
 <h1 align="center">
-  🎥 Node YouTube Clone – Backend API
+   Node YouTube Clone – Backend API
 </h1>
 
 <p align="center">
@@ -14,22 +14,22 @@
 
 ---
 
-## 🚀 Features
+##  Features
 
-- 🔐 JWT-based User Authentication
-- 📤 Cloudinary Video Upload via Multer
-- ⚙️ Centralized AsyncHandler (no repetitive try/catch)
-- 🧯 Global Error Handler (server crash prevention)
-- 📊 Aggregation Pipelines for video stats
-- 👁️ View Tracking
-- 👍 Like/Unlike Videos
-- 👤 Subscribe/Unsubscribe Channels
-- 🔍 Search Videos by Title/Tags/Categories
-- 🧾 Category-Based Video Filtering
-- 📁 Playlist: Create / Edit / Delete
-- ✏️ Rename Videos
-- 📦 Modular Structure: Separate Routes, Controllers, Models, Middleware
-- 🧪 RESTful Endpoints for all features
+-  JWT-based User Authentication
+-  Cloudinary Video Upload via Multer
+-  Centralized AsyncHandler (no repetitive try/catch)
+-  Global Error Handler (server crash prevention)
+-  Aggregation Pipelines for video stats
+-  View Tracking
+-  Like/Unlike Videos
+-  Subscribe/Unsubscribe Channels
+-  Search Videos by Title/Tags/Categories
+-  Category-Based Video Filtering
+-  Playlist: Create / Edit / Delete
+-  Rename Videos
+-  Modular Structure: Separate Routes, Controllers, Models, Middleware
+-  RESTful Endpoints for all features
 
 > 📌 **Note:** This is a backend-only API project. Frontend (e.g. React, Next.js, etc.) can be developed separately.
 
