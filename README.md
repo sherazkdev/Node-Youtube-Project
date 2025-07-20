@@ -1,9 +1,9 @@
 <h1 align="center">
-  🎥 Node YouTube Clone
+  🎥 Node YouTube Clone – Backend API
 </h1>
 
 <p align="center">
-  <b>A full-featured video sharing platform like YouTube, built using Node.js, Express, MongoDB, and Cloudinary.</b>
+  <b>A powerful backend REST API for a YouTube-like video sharing platform. Built using Node.js, Express, MongoDB, and Cloudinary.</b>
 </p>
 
 <p align="center">
@@ -20,27 +20,29 @@
 - 📤 Cloudinary Video Upload via Multer
 - ⚙️ Centralized AsyncHandler (no repetitive try/catch)
 - 🧯 Global Error Handler (server crash prevention)
-- 📊 Aggregation Pipelines for views/likes/stats
-- 👁️ Video Views Counter
-- 👍 Like/Unlike System
+- 📊 Aggregation Pipelines for video stats
+- 👁️ View Tracking
+- 👍 Like/Unlike Videos
 - 👤 Subscribe/Unsubscribe Channels
 - 🔍 Search Videos by Title/Tags/Categories
 - 🧾 Category-Based Video Filtering
-- 📁 Playlist: Add / Edit / Delete
-- ✏️ Rename Uploaded Videos
-- 🧭 Modular Codebase: Separate Controllers, Routes, Models
-- 🔒 Protected Routes with Custom Middleware
+- 📁 Playlist: Create / Edit / Delete
+- ✏️ Rename Videos
+- 📦 Modular Structure: Separate Routes, Controllers, Models, Middleware
+- 🧪 RESTful Endpoints for all features
+
+> 📌 **Note:** This is a backend-only API project. Frontend (e.g. React, Next.js, etc.) can be developed separately.
 
 ---
 
 ## 🧰 Tech Stack
 
-- **Backend:** Node.js, Express
+- **Runtime:** Node.js
+- **Framework:** Express.js
 - **Database:** MongoDB + Mongoose
-- **Authentication:** JWT
-- **File Upload:** Multer + Cloudinary
-- **Templating (if used):** EJS
-- **Error Handling:** Central AsyncHandler + Global Error Handler
+- **Authentication:** JWT (JSON Web Tokens)
+- **Storage:** Cloudinary (via Multer middleware)
+- **Error Handling:** Central async handler + global error middleware
 
 ---
 
