@@ -7,7 +7,7 @@ import { getLikedVideos,toggleLikeVideo,toggleLikeComment } from "../controllers
 const likeRouter = express.Router();
 
 likeRouter.route("/likedVideos").post(verifyJsonWebToken,upload.none(),getLikedVideos)
-likeRouter.route("/likeVideo").post(verifyJsonWebToken,upload.none(),toggleLikeVideo);
+likeRouter.route("/likeVideo").patch(verifyJsonWebToken,upload.none(),toggleLikeVideo);
 likeRouter.route("/likeComment").post(verifyJsonWebToken,upload.none(),toggleLikeComment)
 
 

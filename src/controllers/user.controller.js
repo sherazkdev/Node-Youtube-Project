@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 import subscriptionModel from "../models/subscription.model.js";
 import mongoose from "mongoose";
 import asyncHandler from "../utils/asyncHanlder.js";
+import e from "express";
 
 const genrateAccessTokenAndRefreshToken = async ( userId ) => {
     try {
@@ -106,7 +107,6 @@ const registerUser = asyncHandler( async (req,res) => {
 });
 
 const loginUser = asyncHandler( async (req,res) => {
-
     // Get Form Data
     // Validate Form Data
     // Check User with username Or Email
@@ -116,7 +116,6 @@ const loginUser = asyncHandler( async (req,res) => {
     // create Cookies For AccessToken And RefreshToken
     // And Last Return The User
 
-    console.log( req.body)
 
     const {email,username,password} = req.body;
     
@@ -135,8 +134,6 @@ const loginUser = asyncHandler( async (req,res) => {
 
     const checkHashedPasswordIsMatch = await checkUser.verifyThePassword(password);
 
-    console.log( checkHashedPasswordIsMatch )
-
     if(!checkHashedPasswordIsMatch){
         throw new ApiError(401,"User Details Not Matched");
     }
@@ -153,7 +150,7 @@ const loginUser = asyncHandler( async (req,res) => {
     return res.status(200)
     .cookie("accessToken",AccessToken,cookiesOptions)
     .cookie("refreshToken",RefreshToken,cookiesOptions)
-    .json( new ApiError(loggedInUser,true,"User Successfully Logged In",200) )
+    .json( new ApiResponse(loggedInUser,true,"User Successfully Logged In",200) )
 
 
 
@@ -453,62 +450,85 @@ const getUserChannelProfile = asyncHandler( async (req,res) => {
 } )
 
 const getWatchHistory = asyncHandler( async (req,res) => {
-    
 
-   const watchHistory = await UserModel.aggregate(
+
+   const watchHistory = await UserModel.aggregate(  
         [
             {
                 $match : {
                     $expr : {
-                        $eq : ["$_id",req.user?._id]
+                        $eq : ["$_id",new mongoose.Types.ObjectId(req.user?._id)]
                     }
                 }
             },
-            {
+            {   
                 $lookup : {
                     from : "videos",
-                    localField:"watchHistory",
-                    foreignField:"_id",
-                    as:"watchHistory",
-                    pipeline : [
+                    let:{watchHistory:"$watchHistory"},
+                    pipeline:[
+                        {
+                            $match : {
+                                $expr : {
+                                    $in : ["$_id","$$watchHistory"]
+            
+                                }
+                            }
+                        },
                         {
                             $lookup : {
-                                from: "users",
-                                let : {ownerId:"$owner"},
-                                pipeline : [
+                                from : "users",
+                                let:{owner:"$owner"},
+                                pipeline:[
                                     {
                                         $match : {
                                             $expr : {
-                                                $eq : ["$_id","$$ownerId"]
+                                                $eq : ["$_id","$$owner"]
                                             }
-                                        }
-                                    },
-                                    {
-                                        $project : {
-                                            fullname:1,
-                                            email:1,
-                                            username:1,
-                                            avatar:1,
                                         }
                                     }
                                 ],
                                 as:"owner"
-                            },
-                            
-                        },
-                        {
-                            $addFields : {
-                               owner : { $first : "$owner"}
                             }
                         }
-                        
-                    ]
+                    ],
+                    as:"watchHistory"
+                }
+            },
+            {
+                $project : {
+                    _id:1,
+                    fullname:1,
+                    username:1,
+                    watchHistory : { 
+                        $map : {
+                            input:"$watchHistory",
+                            as:"h",
+                            in:{
+                                _id:"$$h._id",
+                                title:"$$h.title",
+                                videoFile:"$$h.videoFile",
+                                duration:"$$h.duration",
+                                description:"$$h.description",
+                                views:"$$h.views",
+                                createdAt:"$$h.createdAt",
+                                updatedAt:"$$h.updatedAt",
+                                thumbnail:"$$h.thumbnail",
+                                owner : {
+                                    fullname: {$arrayElemAt : ["$$h.owner.fullname",0] },
+                                    email: {$arrayElemAt : ["$$h.owner.email",0] },
+                                    username: {$arrayElemAt : ["$$h.owner.username",0] },
+                                    avatar: {$arrayElemAt : ["$$h.owner.avatar",0] }
+                                }
+                            }
+                        }
+                    }
                 }
             }
+
         ]
    )
     return res.status(200)
-    .json( new ApiResponse(watchHistory[0].watchHistory,true,"watch History",200))
+    .json( new ApiResponse(watchHistory[0],true,"watch History",200))
 
 
 } );
@@ -584,6 +604,22 @@ const getAllNotification = asyncHandler( async (req,res) => {
 
 })
 
+const checkUserByEmail = asyncHandler( async (req,res) => {
+
+    const {email} = req?.body;
+
+    if(!email) throw new ApiError(404,"Email not found");
+
+    const findUserByEmail  = await UserModel.findOne({email:email}).select("-password -refreshToken");
+
+    if(!findUserByEmail){
+        throw new ApiError(404,"User No found");
+    }
+
+    return res.json( new ApiResponse(findUserByEmail,true,"User successfully found",200))
+
+})
+
 export {
     registerUser,
     loginUser,
@@ -596,6 +632,7 @@ export {
     getUserChannelProfile,
     getWatchHistory,
     changeAccountDetails,
-    getAllNotification
+    getAllNotification,
+    checkUserByEmail
 
 }

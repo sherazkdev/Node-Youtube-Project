@@ -1,7 +1,7 @@
 
     const asyncHandler = ( asyncHalder ) => {
         return (req,res,next) => {
-            Promise.resolve( asyncHalder(req,res,next) ).catch((error) => next(error))
+            Promise.resolve( asyncHalder(req,res,next) ).catch((error) => next(error));
         }
     }
 

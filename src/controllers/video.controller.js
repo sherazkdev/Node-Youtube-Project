@@ -67,108 +67,452 @@ const getAllVideos = asyncHandler( async (req,res) => {
         ]
     );
 
-    console.log(videos)
-
     if(!videos){
         throw new ApiError(401,"error from videos fetching")
     }
 
-    return res.json(
-        new ApiResponse(videos,true,"Videos Successfully Feteched",200)
-    )
+    setTimeout( () => {
+        return res.json(
+            new ApiResponse(videos,true,"Videos Successfully Feteched",200)
+        )
+    },3000 )
 
     
 });
 
 const watchVideo = asyncHandler( async (req,res) => {
     
-    const { v } = req.query;
+    const { v } = req.params;
+
+    // const video = await videoModel.aggregate(
+    //     [
+    //         {
+    //             $match : {
+    //                 $expr : {
+    //                     $eq : ["$_id",new mongoose.Types.ObjectId(v)]
+    //                 }
+    //             }
+    //         },
+    //         {
+    //             $lookup : {
+    //                 from:"users",
+    //                 localField:"owner",
+    //                 foreignField:"_id",
+    //                 as:"owner",
+    //                 pipeline : [
+    //                     {
+    //                         $lookup : {
+    //                             from:"subscriptions",
+    //                             let:{userId : "$_id"},
+    //                             pipeline : [
+    //                                 {
+    //                                     $match : {
+    //                                         $expr : {
+    //                                             $eq : ["$channel","6845319ce92552d1087219c4"]
+    //                                         }
+    //                                     }
+    //                                 }
+    //                             ],
+    //                             as:"subscribers"
+    //                         }
+    //                     },
+    //                     {
+    //                         $lookup : {
+    //                             from:"subscriptions",
+    //                             let:{userId : "$_id"},
+    //                             pipeline : [
+    //                                 {
+    //                                     $match : {
+    //                                         $expr : {
+    //                                             $eq : ["$channel","$$userId"]
+    //                                         }
+    //                                     }
+    //                                 }
+    //                             ],
+    //                             as:"subscribedTo",
+    //                             pipeline:[
+    //                                 {
+    //                                     $lookup : {
+    //                                         from : "users",
+    //                                         let:{userId:"$subscriber"},
+    //                                         pipeline : [
+    //                                             {
+    //                                                 $match : {
+    //                                                     $expr : {
+                                                                
+    //                                                         $eq : ["$_id","$$userId"]
+    //                                                     }
+    //                                                 }
+    //                                             }
+    //                                         ],
+    //                                         as:"subscribers"
+    //                                     }
+    //                                 }
+    //                             ]
+    //                         }
+    //                     },
+    //                     {
+    //                         $addFields : {
+    //                             subscribers : {
+    //                                 $first : "$subscribers"
+    //                             },
+    //                             toSubscribed : {
+    //                                 $first : "$subscribedTo"
+    //                             },
+    //                             totalSubscribersSize : {
+    //                                 $size: "$subscribers"
+    //                             },
+    //                             toSubscribedSize : {
+    //                                 $size: "$subscribedTo"
+    //                             }, 
+    //                         }
+    //                     }
+    //                 ]
+    //             }
+    //         }, 
+    //         {
+    //             $addFields : {
+    //                 owner : {
+    //                     $first : "$owner"
+    //                 }
+    //             }
+    //         },
+
+    //     ]
+    // );
 
 
+    // const video = await videoModel.aggregate( [
+    //     {
+    //         $match : {
+    //             $expr : {
+    //                 $eq : ["$_id",new mongoose.Types.ObjectId(v)]
+    //             }
+    //         }
+    //     },
+    //     {
+    //         $lookup : {
+    //             from : "users",
+    //             let:{ownerId:"$owner"},
+    //             pipeline : [
+    //                 {
+    //                     $match : {
+    //                         $expr : {
+    //                             $eq : ["$_id","$$ownerId"]
+    //                         }
+    //                     }
+    //                 },
+    //                 {
+    //                     $lookup : {
+    //                         from : "subscriptions",
+    //                         let:{ownerId:"$_id"},
+    //                         pipeline : [
+    //                             {
+    //                                 $match : {
+    //                                     $expr : {
+    //                                         $eq : ["$channel","$$ownerId"]
+    //                                     }
+    //                                 }
+    //                             },
+    //                             {
+    //                                 $lookup : {
+    //                                     from : "users",
+    //                                     let:{subscriberId:"$subscriber"},
+    //                                     pipeline : [
+    //                                         {
+    //                                             $match : {
+    //                                                 $expr : {
+    //                                                     $eq : ["$_id","$$subscriberId"]
+    //                                                 }
+    //                                             }
+    //                                         }
+    //                                     ],
+    //                                     as:"subscriber"
+    //                                 }
+    //                             }
+    //                         ],
+    //                         as:"subscribers"
+    //                     }
+    //                 }
+    //             ],
+    //             as:"owner"
+    //         }
+    //     },
+    //     {
+    //         $lookup : {
+    //             from : "likes",
+    //             let : {videoId:"$_id"},
+    //             pipeline : [
+    //                 {
+    //                     $match : {
+    //                         $expr : {
+    //                             $eq : ["$video","$$videoId"]
+    //                         }
+    //                     }
+    //                 }
+    //             ],
+    //             as:"videoLikes"
+    //         }
+    //     },
+    //     {
+    //         $lookup : {
+    //             from : "comments",
+    //             let:{videoId:"$_id"},
+    //             pipeline : [
+    //                 {
+    //                     $match : {
+    //                         $expr : {
+    //                             $and : [
 
-    const video = await videoModel.aggregate(
-        [
-            {
-                $match : {
-                    $expr : {
-                        $eq : ["$_id",new mongoose.Types.ObjectId(v)]
-                    }
-                }
-            },
-            {
-                $lookup : {
-                    from:"users",
-                    localField:"owner",
-                    foreignField:"_id",
-                    as:"owner",
-                    pipeline : [
-                        {
-                            $lookup : {
-                                from:"subscriptions",
-                                let:{userId : "$_id"},
-                                pipeline : [
-                                    {
-                                        $match : {
-                                            $expr : {
-                                                $eq : ["$channel","$$userId"]
-                                            }
-                                        }
-                                    }
-                                ],
-                                as:"subscribers"
-                            }
-                        },
-                        {
-                            $lookup : {
-                                from:"subscriptions",
-                                let:{userId : "$_id"},
-                                pipeline : [
-                                    {
-                                        $match : {
-                                            $expr : {
-                                                $eq : ["$subscriber","$$userId"]
-                                            }
-                                        }
-                                    }
-                                ],
-                                as:"subscribedTo"
-                            }
-                        },
-                        {
-                            $addFields : {
-                                subscribers : {
-                                    $first : "$subscribers"
-                                },
-                                toSubscribed : {
-                                    $first : "$subscribedTo"
-                                },
-                                totalSubscribersSize : {
-                                    $size: "$subscribers"
-                                },
-                                toSubscribedSize : {
-                                    $size: "$subscribedTo"
-                                }, 
-                            }
-                        }
-                    ]
-                }
-            }, 
-            {
-                $addFields : {
-                    owner : {
-                        $first : "$owner"
-                    }
+    //                                 {
+    //                                     $eq : ["$video","$$videoId"] 
+    //                                 },
+    //                                 {
+    //                                     $eq : ["$parentId",null] 
+    //                                 }
+
+    //                             ]
+    //                         }
+    //                     }
+    //                 },
+    //                 {
+    //                     $lookup : {
+    //                         from : "comments",
+    //                         let : {commentId:"$_id"},
+    //                         pipeline : [
+    //                             {
+    //                                 $match : {
+    //                                     $expr : {
+    //                                         $eq : ["$parentId","$$commentId"]
+    //                                     }
+    //                                 }
+    //                             },
+    //                             {
+    //                                 $lookup : {
+    //                                     from : "likes",
+    //                                     let:{commentId:"$_id"},
+    //                                     pipeline : [
+    //                                         {
+    //                                             $match : {
+    //                                                 $expr : {
+    //                                                     $eq : ["$comment","$$commentId"]
+    //                                                 }
+    //                                             }
+    //                                         }
+    //                                     ],
+    //                                     as:"likes"
+    //                                 }
+    //                             }
+    //                         ],
+    //                         as:"replies"
+    //                     }
+    //                 },
+    //                 {
+    //                     $lookup : {
+    //                         from : "likes",
+    //                         let:{commentId:"$_id"},
+    //                         pipeline : [
+    //                             {
+    //                                 $match : {
+    //                                     $expr : {
+    //                                         $eq : ["$comment","$$commentId"]
+    //                                     }
+    //                                 }
+    //                             }
+    //                         ],
+    //                         as:"likes"
+    //                     }
+    //                 },
+    //             ],
+    //             as:"comments"
+    //         }
+    //     },
+    //     {
+    //        $addFields : {
+    //             totalLikes : {
+    //                 $size : "$videoLikes"
+    //             }
+    //        }
+    //     }
+    // ] )
+
+    const video = await videoModel.aggregate( [
+        {
+            $match : {
+                $expr : {
+                    $eq : ["$_id",new mongoose.Types.ObjectId(v)]
                 }
             }
-        ]
-    );
+        },
+        {
+            $lookup : {
+                from : "users",
+                let:{ownerId:"$owner"},
+                pipeline : [
+                    {
+                        $match : {
+                            $expr : {
+                                $eq : ["$_id","$$ownerId"]
+                            }
+                        }
+                    },
+                    {
+                        $lookup : {
+                            from : "subscriptions",
+                            let:{ownerId:"$_id"},
+                            pipeline : [
+                                {
+                                    $match : {
+                                        $expr : {
+                                            $eq : ["$channel","$$ownerId"]
+                                        }
+                                    }
+                                },
+                                {
+                                    $lookup : {
+                                        from : "users",
+                                        let:{subscriberId:"$subscriber"},
+                                        pipeline : [
+                                            {
+                                                $match : {
+                                                    $expr : {
+                                                        $eq : ["$_id","$$subscriberId"]
+                                                    }
+                                                }
+                                            }
+                                        ],
+                                        as:"subscriber"
+                                    }
+                                }
+                            ],
+                            as:"subscribers"
+                        }
+                    }
+                ],
+                as:"owner"
+            }
+        },
+        {
+            $lookup : {
+                from : "likes",
+                let : {videoId:"$_id"},
+                pipeline : [
+                    {
+                        $match : {
+                            $expr : {
+                                $eq : ["$video","$$videoId"]
+                            }
+                        }
+                    }
+                ],
+                as:"videoLikes"
+            }
+        },
+        {
+            $unwind : "$owner"
+        },
+        {
+            $lookup : {
+                from : "subscriptions",
+                let:{ownerId:"$owner._id",currentUser : new mongoose.Types.ObjectId(req?.user?._id)},
+                pipeline : [
+                    {
+                        $match : {
+                            $expr : {
+                                $and : {
+                                    $eq : ["$channel","$$ownerId"],
+                                    $eq : ["$subscriber","$$currentUser"]
 
-    const updateWatchHistory = await UserModel.findByIdAndUpdate(new mongoose.Types.ObjectId(req.user.id),{
-        $addToSet : {
-            watchHistory:new mongoose.Types.ObjectId(video._id)
+                                }
+                            }
+                        }
+                    }
+                ],
+                as:"isSubscribed"
+            }
+        },
+        {
+            $addFields : {
+                isSubscribed : {
+                    $gt : [ {$size : "$isSubscribed"},0 ]
+                },
+                totalSubscribers : {
+                    $size : "$owner.subscribers"
+                },
+                totalVideoLikes : {
+                    $size : "$videoLikes"
+                },
+                isLiked : {
+                    // $map : {
+                    //     input : "$videoLikes",
+                    //     as:"like",
+                    //     in : {
+                    //         $cond : {
+                    //             if : { $in : [new mongoose.Types.ObjectId(req?.user?._id),"$$like.likedBy"] },
+                    //             then:true,
+                    //             else:false
+                    //         }
+                    //     }
+                    // }
+
+                    // $reduce : {
+                    //     input:"$videoLikes",
+                    //     initialValue : false,
+                    //     in : {
+                    //         $cond : {
+                    //             if : {$in : [new mongoose.Types.ObjectId(req?.user?._id),"$$value"]},
+                    //             then:true,
+                    //             else:false
+                    //         }
+                    //     }
+                    // }
+                    $in: [ new mongoose.Types.ObjectId(req?.user?._id), "$videoLikes.likedBy" ]
+                    
+                      
+                } 
+            }
+        },
+        {
+            $project : {
+                _id:1,
+                videoFile:1,
+                description:1,
+                thumbnail:1,
+                isSubscribed:1,
+                totalSubscribers:1,
+                totalVideoLikes:1,
+                views:1,
+                duration:1,
+                title:1,
+                createdAt:1,
+                owner : {
+                    avatar : "$owner.avatar",
+                    avausernametar : "$owner.username",
+                    _id : "$owner._id",
+                    fullname : "$owner.fullname",
+                    email : "$owner.email",
+
+                },
+                isLiked:1,
+                videoLikes:1
+            }
         }
-    },{new:true})
+              
+    ] )
+   
+    if(req?.user){
+
+        const updateWatchHistory = await UserModel.findByIdAndUpdate(new mongoose.Types.ObjectId(req.user._id),{
+            $addToSet : {
+                watchHistory:new mongoose.Types.ObjectId(v)
+            }
+        },{new:true})
+    }
+
     
+    if(!video){
+        throw new ApiError(404,"Video Not Found")
+    }
 
     return res.json(new ApiResponse(video,true,"",200))
 
@@ -249,7 +593,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
     if(!deleteVideoFromCloudinary){
         throw new ApiError(400,"Video Not Deleted From cloudinary")
     };
-    const deleteFromDbCurrentVideo = await videoModel.findByIdAndDelete(mongoose.Types.ObjectId(video._id));
+    const deleteFromDbCurrentVideo = await videoModel.findByIdAndDelete(new mongoose.Types.ObjectId(video._id));
 
     if(!deleteFromDbCurrentVideo){
         throw new ApiError(500,"Bad Request Server Problem try gain a few minutes")
@@ -339,6 +683,88 @@ const updateVideoView = asyncHandler( async (req,res) => {
     )
 } );
 
+const relatedVideos = asyncHandler(async (req,res) => { 
+
+    const {_id,page=1,limit=5} = req.query;
+    if(!_id){
+        throw new ApiError(404,"Error: Title Is not definde");
+    }
+
+    const video = await videoModel.findById(new mongoose.Types.ObjectId(_id));
+
+    const query = video.title.split("  ").slice(0,10).join("|");
+
+    const pageNumber = parseInt(page);
+    const limitNumber = parseInt(limit);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const relatedVideos = await videoModel.aggregate( [
+        {
+            $match : {
+                title:{$regex : query,$options:"i"}
+            }
+        },
+        {
+            $lookup : {
+                from : "users",
+                let:{owner:"$owner"},
+                pipeline:[
+                    {
+                        $match : {
+                            $expr : {
+                                $eq : ["$_id","$$owner"]
+                            }
+                        }
+                    }
+                ],
+                as:"owner"
+            }
+        },
+        {
+            $limit : limit
+        },
+        {
+            $skip : skip
+        },
+        {
+            $sort : {
+                createdAt:-1
+            }
+        },
+        {
+            $unwind : "$owner"
+        },
+        {
+            $project : {
+                _id:1,
+                videoFile:1,
+                description:1,
+                thumbnail:1,
+                isSubscribed:1,
+                totalSubscribers:1,
+                totalVideoLikes:1,
+                views:1,
+                duration:1,
+                title:1,
+                createdAt:1,
+                owner : {
+                    avatar : "$owner.avatar",
+                    avausernametar : "$owner.username",
+                    _id : "$owner._id",
+                    fullname : "$owner.fullname",
+                    email : "$owner.email",
+
+                }
+            }
+        }
+    ] );
+    
+    // return res.json(relatedVideos)
+    return res.json( new ApiResponse(relatedVideos,true,"RelatedVideo SuccessfullyFetched",200) )
+
+
+})
+
 
 export {
     watchVideo,
@@ -347,4 +773,5 @@ export {
     deleteVideo,
     updateVideo,
     updateVideoView,
+    relatedVideos,
 }

@@ -1,6 +1,6 @@
 import express from "express";
 import upload from "../middlewares/multer.middleware.js"
-import { verifyJsonWebToken } from "../middlewares/auth.middleware.js";
+import { checkUserIsLoggedIn, verifyJsonWebToken } from "../middlewares/auth.middleware.js";
 import {
             getVideoComments,
             addComment,
@@ -14,7 +14,7 @@ const commentRouter = express.Router();
 
 
 
-commentRouter.route("/video/:videoId").get(getVideoComments);
+commentRouter.route("/video/:videoId").get(checkUserIsLoggedIn,getVideoComments);
 commentRouter.route("/add-comment").post(verifyJsonWebToken,upload.none(),addComment);
 commentRouter.route("/reply-comment").patch(verifyJsonWebToken,replyComment);
 commentRouter.route("/delete-comment/:commentId").delete(verifyJsonWebToken,deleteComment);

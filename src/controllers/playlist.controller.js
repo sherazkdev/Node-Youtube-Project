@@ -177,14 +177,114 @@ const getPlaylistById = asyncHandler( async (req,res) => {
     if(!playlistId){
         throw new ApiError(404,"Error: Playlistid is undefind");
     }
+    
     const checkObjIdForPlayListId = await isValidObjectId(playlistId);
     if(checkObjIdForPlayListId == false){
         throw new ApiError(403,"Error: Invalid object id");
     }
-    const playlist = await playlistModel.findOne({
-        owner:req.user.id,
-        _id:playlistId
-    });
+
+    const playlist = await playlistModel.aggregate(
+        [
+            {
+                $match : {
+                    $expr : {
+                        $eq : ["$_id",new mongoose.Types.ObjectId(playlistId)]
+                    }
+                }
+            },
+            {
+                $lookup : {
+                    from : "videos",
+                    let:{videoId:"$videos"},
+                    pipeline : [
+                        {
+                            $match : {
+                                $expr : {
+                                    $in : ["$_id","$$videoId"]
+                                }
+                            }
+                        },
+                        {
+                            $lookup : {
+                                from : "users",
+                                let:{owner:"$owner"},
+                                pipeline:[
+                                    {
+                                        $match : {
+                                            $expr : {
+                                                $eq : ["$_id","$$owner"]
+                                            }
+                                        }
+                                    }
+                                ],
+                                as:"owner"
+                            }
+                        }
+                    ],
+                    as:"videos"
+                }
+            },
+            {
+                $lookup : {
+                    from : "users",
+                    let:{owner:"$owner"},
+                    pipeline:[
+                        {
+                            $match : {
+                                $expr : {
+                                    $eq:["$_id","$$owner"]
+                                }
+                            }
+                        }
+                    ],
+                    as:"owner"
+                }
+            },
+            {
+                $unwind : "$owner"
+            },
+            {
+                $
+            },
+            {
+                $project : {
+                    _id:1,
+                    name:1,
+                    description:1,
+                    visibility:1,
+                    videos:{
+                        $map : {
+                            input : "$videos",
+                            as:"video",
+                            in : {
+                                _id:"$$video._id",
+                                thumbnail:"$$video.thumbnail",
+                                title:"$$video.title",
+                                description:"$$video.description",
+                                createdAT:"$$video.createdAT",
+                                updatedAt:"$$video.updatedAt",
+                                views:"$$video.views",
+                                owner : {
+                                    $arrayElemAt : [
+                                        "$$video.owner",
+                                        0
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    owner:{
+                        _id:"$owner._id",
+                        username:"$owner.username",
+                        avatar:"$owner.avatar",
+                        email:"$owner.email"
+                    },
+                }
+            }
+
+        ]
+    );
+
     if(!playlist){
         throw new ApiError(404,"Error: Playlist is not find")
     }

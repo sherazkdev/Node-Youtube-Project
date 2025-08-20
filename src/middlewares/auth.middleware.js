@@ -35,5 +35,27 @@ const verifyJsonWebToken = asyncHandler( async (req,res,next) => {
     }
 } )
 
+const checkUserIsLoggedIn = asyncHandler( async(req,res,next) => {
+    
+    const userToken = req.cookies?.accessToken;
+    if(!userToken) {
+        return next();
+    }
+    const verifyJwt = jwt.verify(userToken,process.env.ACCESS_SECRET_TOKEN);
 
-export {verifyJsonWebToken}
+    if(!verifyJwt) {
+        throw new ApiError(402,"Jwt Is Not Verifed")
+    }
+    const checkTheUserInDb = await UserModel.findById(verifyJwt._id).select("-password -refreshToken");
+
+    if(!checkTheUserInDb){
+        throw new ApiError(404,"User Not Found Error From verifyJsonWebToekns")
+    }
+
+    req.user = checkTheUserInDb;
+
+    next();
+
+})
+
+export {verifyJsonWebToken,checkUserIsLoggedIn}
