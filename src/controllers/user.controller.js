@@ -5,6 +5,7 @@ import ApiResponse from "../utils/ApiResponse.js";
 import { isValidObjectId } from "mongoose";
 import jwt from "jsonwebtoken";
 import subscriptionModel from "../models/subscription.model.js";
+import VideoModel from "../models/video.model.js"
 import mongoose from "mongoose";
 import asyncHandler from "../utils/asyncHanlder.js";
 import e from "express";
@@ -157,7 +158,299 @@ const loginUser = asyncHandler( async (req,res) => {
 
 } );
 
+const searchWatchHistory = asyncHandler(async (req,res) => {
+    const {query} = req?.query;
+    console.log(query)
+    if(!query.trim()){
+        throw new ApiError(404,"Query parameters not found");
+    }
+    
+    // const matchWatchHistory = await UserModel.aggregate( [
+    //     {
+    //         $match : {
+    //             _id:new mongoose.Types.ObjectId(req?.user?._id),
+    //         }
+    //     },
+    //     {
+    //         $lookup : {
+    //             from : "videos",
+    //             let:{query:query},
+    //             pipeline:[
+    //                 {
+    //                     $match : {
+    //                         $expr : {
+    //                             $or : [    
+    //                                 { $regexMatch: { input: "$title", regex: "$$query", options: "i" } },
+    //                                 { $regexMatch: { input: "$description", regex: "$$query", options: "i" } }
+    //                             ]
+    //                         }
+    //                     }
+    //                 },
+    //                 {
+    //                     $lookup : {
+    //                         from : "users",
+    //                         let:{owner:"$owner"},
+    //                         pipeline:[
+    //                             {
+    //                                 $match : {
+    //                                     $expr : {
+    //                                         $eq : ["$_id","$$owner"]
+    //                                     }
+    //                                 }
+    //                             }
+    //                         ],
+    //                         as:"owner"
+    //                     }
+    //                 }
+    //             ],
+    //             as:"watchHistory"
+    //         },
+    //     },
+    //     {
+    //         $project : {
+    //             _id:1,
+    //             fullname:1,
+    //             username:1,
+    //             email:1,
+    //             avatar:1,
+    //             coverImage:1,
+    //             watchHistory:{
+    //                 $map : {
+    //                     input : "$watchHistory",
+    //                     as:"history",
+    //                     in:{
+    //                         _id:"$$history._id",
+    //                         videoFile:"$$history.videoFile",
+    //                         thumbnail:"$$history.thumbnail",
+    //                         title:"$$history.title",
+    //                         description:"$$history.description",
+    //                         duration:"$$history.duration",
+    //                         views:"$$history.views",
+    //                         isPublished:"$$history.isPublished",
+    //                         createdAt:"$$history.createdAt",
+    //                         updatedAt:"$$history.updatedAt",
+    //                         owner:{
+    //                             _id:{$arrayElemAt : ["$$history.owner._id",0]},
+    //                             fullname: {$arrayElemAt : ["$$history.owner.fullname",0] },
+    //                             email: {$arrayElemAt : ["$$history.owner.email",0] },
+    //                             username: {$arrayElemAt : ["$$history.owner.username",0] },
+    //                             avatar: {$arrayElemAt : ["$$history.owner.avatar",0] }
+    //                         }
 
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // ] );
+    const matchWatchHistory = await UserModel.aggregate([
+        {
+            $match : {
+                $expr : {
+                    $eq : ["$_id",new mongoose.Types.ObjectId(req?.user?._id)]
+                }
+            }
+        },
+        {
+            $lookup : {
+                from : "videos",
+                let:{query:query,watchHistory:"$watchHistory"},
+                pipeline:[
+                    {
+                        $match : {
+                            $expr : {
+                                $and : [
+                                    {
+                                        $in : ["$_id","$$watchHistory"]
+                                    },
+                                    {
+                                        $or : [
+                                            {$regexMatch : {input:"$title",regex:"$$query",options:"i"}},
+                                            {$regexMatch : {input:"$description",regex:"$$query",options:"i"}},
+                                        ]
+                                    },
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        $lookup : {
+                            from : "users",
+                            let:{owner:"$owner"},
+                            pipeline:[
+                                {
+                                    $match : {
+                                        $expr : {
+                                            $eq : ["$_id","$$owner"]
+                                        }
+                                    }
+                                }
+                            ],
+                            as:"owner"
+                        }
+                    }
+                ],
+                as:"watchHistory"
+            }
+        },
+        {
+            $project : {
+                        _id:1,
+                        fullname:1,
+                        username:1,
+                        email:1,
+                        avatar:1,
+                        coverImage:1,
+                        watchHistory:{
+                            $map : {
+                                input : "$watchHistory",
+                                as:"history",
+                                in:{
+                                    _id:"$$history._id",
+                                    videoFile:"$$history.videoFile",
+                                    thumbnail:"$$history.thumbnail",
+                                    title:"$$history.title",
+                                    description:"$$history.description",
+                                    duration:"$$history.duration",
+                                    views:"$$history.views",
+                                    isPublished:"$$history.isPublished",
+                                    createdAt:"$$history.createdAt",
+                                    updatedAt:"$$history.updatedAt",
+                                    owner:{
+                                        _id:{$arrayElemAt : ["$$history.owner._id",0]},
+                                        fullname: {$arrayElemAt : ["$$history.owner.fullname",0] },
+                                        email: {$arrayElemAt : ["$$history.owner.email",0] },
+                                        username: {$arrayElemAt : ["$$history.owner.username",0] },
+                                        avatar: {$arrayElemAt : ["$$history.owner.avatar",0] }
+                                    }
+        
+                                }
+                            }
+                        }
+            }
+        }
+    ])
+
+    return res.json(new ApiResponse(matchWatchHistory,true,"search history successfully featched",200))
+});
+
+const getSubscribedNotifications = asyncHandler(async (req,res) => {
+
+    const {page=1,limit=20} = req.query;
+
+    const pageNumber = parseInt(page);
+    const limitNumber = parseInt(limit);
+
+    const skip = (pageNumber - 1) * limit;
+
+    // const getNotifications = await UserModel.aggregate( [
+    //     {
+    //         $match : {
+    //             $expr : {
+    //                 $eq : ["$_id",new mongoose.Types.ObjectId(req?.user?._id)]
+    //             }
+    //         }
+    //     },
+    //     {
+    //         $lookup : {
+    //             from : "subscriptions",
+    //             let:{userId:"$_id"},
+    //             pipeline:[
+    //                 {
+    //                     $match : {
+    //                         $expr : {
+    //                             $eq : ["$subscriber","$$userId"]
+    //                         }
+    //                     }
+    //                 },
+    //                 {
+    //                     $lookup : {
+    //                         from : "videos",
+    //                         let:{channelId:"$channel"},
+    //                         pipeline : [
+    //                             {
+    //                                 $match : {
+    //                                     $expr : {
+    //                                         $eq : ["$owner","$$channelId"]
+    //                                     }
+    //                                 }
+    //                             },
+    //                             {
+    //                                 $sort : {
+    //                                     createdAt:-1
+    //                                 }
+    //                             }
+    //                         ],
+    //                         as:"notifications"
+    //                     }
+    //                 }
+    //             ],
+    //             as:"subscribeTo"
+    //         }
+    //     }
+    // ] );
+
+    const subscribedTo = await subscriptionModel.find({subscriber:new mongoose.Types.ObjectId(req?.user?._id)}).select("channel");
+    const channels = subscribedTo.map( (sub) => sub?.channel);
+    
+    // get all notifications
+    const getNotifications = await VideoModel.aggregate( [
+        {
+            $match : {
+                $expr : {
+                    $in : ["$owner",channels]
+                }
+            }
+        },
+        {
+            $lookup : {
+                from : "users",
+                let:{owner:"$owner"},
+                pipeline:[
+                    {
+                        $match : {
+                            $expr : {
+                                $eq : ["$_id","$$owner"]
+                            }
+                        }
+                    }
+                ],
+                as:"owner"
+            }
+        },
+        {
+            $unwind : "$owner"
+        },
+        {
+            $sort : {
+                createdAt:-1
+            }
+        },
+        {
+            $skip : skip
+        },
+        {
+            $project : {
+                _id:1,
+                videoFile:1,
+                thumbnail:1,
+                description:1,
+                title:1,
+                createdAt:1,
+                views:1,
+                duration:1,
+                "owner.fullname":1,
+                "owner.email":1,
+                "owner.username":1,
+                "owner.avatar":1,
+
+            }
+        }
+    ] )
+
+    return res.json(new ApiResponse(getNotifications,true,"Subscriptions videos successfully featched",200));
+
+})
 
 const logoutUser = asyncHandler( async (req,res) => {
     // First of All Get user Object
@@ -620,6 +913,31 @@ const checkUserByEmail = asyncHandler( async (req,res) => {
 
 })
 
+const removeVideoFromWatchHistory = asyncHandler(async (req,res) => {
+    const {videoId} = req.params;
+    
+    if(!videoId){
+        throw new ApiError(404,"VideoId is not found")
+    }
+
+    const findWatchHistoryIdIsExist = await UserModel.findOne({watchHistory:{$in:[new mongoose.Types.ObjectId(videoId)]}});
+    if(!findWatchHistoryIdIsExist){
+        throw new ApiError(404,"Video is not exist by this is "+videoId)
+    }
+    const removeVideoFromWatchHistory = await UserModel.findByIdAndUpdate(
+        { _id: new mongoose.Types.ObjectId(req?.user?._id) },  
+        { $pull: { watchHistory: new mongoose.Types.ObjectId(videoId) } }, // update object
+        { new: true } 
+    );      
+    if(!removeVideoFromWatchHistory){
+        throw new ApiError(500,"Server Error");
+    }
+
+    // finaly return watch history is deleted single item
+    return res.json( new ApiResponse("",true,"Video Removed from watchHistory",200));
+
+})
+
 export {
     registerUser,
     loginUser,
@@ -633,6 +951,9 @@ export {
     getWatchHistory,
     changeAccountDetails,
     getAllNotification,
-    checkUserByEmail
+    checkUserByEmail,
+    removeVideoFromWatchHistory,
+    searchWatchHistory,
+    getSubscribedNotifications,
 
 }

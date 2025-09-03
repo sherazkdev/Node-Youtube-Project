@@ -21,7 +21,13 @@ import subscriptionRouter from "./routes/subscription.routes.js";
 import commentRouter from "./routes/comment.routes.js";
 import playlistRouter from "./routes/playlist.routes.js"
 import errorHandler from "./middlewares/errorHandler.js";
+import {checkUserIsLoggedIn} from "./middlewares/auth.middleware.js";
 
+// Middlewares
+
+app.use(checkUserIsLoggedIn);
+
+// routes
 app.use("/api/v1/users",userRoutes);
 app.use("/api/v1/videos",videoRouter);
 app.use("/api/v1/likes",likeRouter);

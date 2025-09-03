@@ -1,5 +1,5 @@
 import express from "express";
-import { loginUser, registerUser,logoutUser,getUserChannelProfile, changeAvatarImage, changeCoverImage,changeAccountDetails, changeUserPassword, getWatchHistory,getCurrentUser, getAllNotification, checkUserByEmail} from "../controllers/user.controller.js";
+import { loginUser, registerUser,logoutUser,getUserChannelProfile, getSubscribedNotifications, searchWatchHistory, removeVideoFromWatchHistory,changeAvatarImage, changeCoverImage,changeAccountDetails, changeUserPassword, getWatchHistory,getCurrentUser, getAllNotification, checkUserByEmail} from "../controllers/user.controller.js";
 import upload from "../middlewares/multer.middleware.js";
 import {verifyJsonWebToken} from "../middlewares/auth.middleware.js"
 
@@ -33,6 +33,9 @@ userRoute.route("/change-password").patch(verifyJsonWebToken,upload.none(),chang
 userRoute.route("/watch-hisory").get(verifyJsonWebToken,getWatchHistory);
 userRoute.route("/current-user").get(verifyJsonWebToken,getCurrentUser);
 userRoute.route("/my-notification").post(verifyJsonWebToken,upload.none(),getAllNotification);
+userRoute.route("/remove-video-from-watch-history/:videoId").get(verifyJsonWebToken,removeVideoFromWatchHistory)
+userRoute.route("/search-history").get(verifyJsonWebToken,searchWatchHistory)
+userRoute.route("/latest-notifications").get(verifyJsonWebToken,getSubscribedNotifications);
 
 
 export default userRoute;

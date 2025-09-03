@@ -9,7 +9,6 @@ const verifyJsonWebToken = asyncHandler( async (req,res,next) => {
     try {
 
         const token = req.cookies?.accessToken || req.headers.authorization?.replace("Bearer ", "");
-
         if(!token){
             throw new ApiError(404,"Unauthorized Request");
         }

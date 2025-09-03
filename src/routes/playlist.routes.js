@@ -7,15 +7,15 @@ import {createPlaylist,
         addVideoToPlaylist,
         getUserPlaylists,
         getPlaylistById} from "../controllers/playlist.controller.js";
+// Middlewares
 
 const playlistRouter = express.Router();
 
-playlistRouter.use(verifyJsonWebToken);
 
-playlistRouter.route("/create-playlist").post(createPlaylist);
+playlistRouter.route("/create-playlist").post(verifyJsonWebToken,createPlaylist);
 playlistRouter.route("/remove-playlist/:playlistId").delete(removePlaylist);
 playlistRouter.route("/update-playlist").patch(updatePlaylist);
-playlistRouter.route("/remove-video-from-playlist/:playlistId/:videoId").get(removeVideoFromPlaylist);
+playlistRouter.route("/remove-video-from-playlist/:playlistId/:videoId").patch(removeVideoFromPlaylist);
 playlistRouter.route("/add-video-to-playlist/:playlistId/:videoId").patch(addVideoToPlaylist);
 playlistRouter.route("/my-playlists").get(getUserPlaylists);
 playlistRouter.route("/playlist/:playlistId").get(getPlaylistById);

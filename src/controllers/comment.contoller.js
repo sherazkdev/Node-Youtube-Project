@@ -16,172 +16,275 @@ const getVideoComments = asyncHandler( async (req,res) => {
     if(checkTheObjIdForVideoId == false){
         throw new ApiError(403,"Error: Invalid Object Id")
     }
-        const comments = await commentModel.aggregate(
-            [
-                {
-                    $match : {
-                        $expr : {
-                            $and : [
 
-                                {$eq : ["$video",new mongoose.Types.ObjectId(videoId)]},
-                                {$eq : ["$parentId",null]}
+    // const comments = await commentModel.aggregate(
+    //     [
+    //         {
+    //             $match : {
+    //                 $expr : {
+    //                     $and : [
 
-                            ],
-                        }
-                    }
-                },
-                {
-                    $lookup : {
-                        from : "comments",
-                        let:{commentId:"$_id"},
-                        pipeline : [
-                            {
-                                $match : {
-                                    $expr : {
-                                        $eq : ["$parentId","$$commentId"]
-                                    }
-                                }
-                            },
-                            {
-                                $lookup : {
-                                    from : "likes",
-                                    let:{replyCommentId:"$_id"},
-                                    pipeline:[
-                                        {
-                                            $match : {
-                                                $expr : {
-                                                    $eq : ["$comment","$$replyCommentId"]
-                                                }
-                                            }
-                                        }
-                                    ],
-                                    as:"replyCommentLikes"
-                                }
-                            },
-                            {
-                                $lookup : {
-                                    from : "users",
-                                    let:{owner:"$owner"},
-                                    pipeline:[
-                                        {
-                                            $match : {
-                                                $expr : {
-                                                    $eq : ["$_id","$$owner"]
-                                                }
-                                            }
-                                        }
-                                    ],
-                                    as:"owner"
-                                }
-                            }
-                        ],
-                        as:"replies"
-                    }
-                },
-                {
-                    $lookup : {
-                        from:"users",
-                        let:{owner:"$owner"},
-                        pipeline:[
-                            {
-                                $match : {
-                                    $expr : {
-                                        $eq : ["$_id","$$owner"]
-                                    }
-                                }
-                            }
-                        ],
-                        as:"owner"
+    //                         {$eq : ["$video",new mongoose.Types.ObjectId(videoId)]},
+    //                         {$eq : ["$parentId",null]}
+
+    //                     ],
+    //                 }
+    //             }
+    //         },
+    //         {
+    //             $lookup : {
+    //                 from : "comments",
+    //                 let:{commentId:"$_id"},
+    //                 pipeline : [
+    //                     {
+    //                         $match : {
+    //                             $expr : {
+    //                                 $eq : ["$parentId","$$commentId"]
+    //                             }
+    //                         }
+    //                     },
+    //                     {
+    //                         $lookup : {
+    //                             from : "likes",
+    //                             let:{replyCommentId:"$_id"},
+    //                             pipeline:[
+    //                                 {
+    //                                     $match : {
+    //                                         $expr : {
+    //                                             $eq : ["$comment","$$replyCommentId"]
+    //                                         }
+    //                                     }
+    //                                 }
+    //                             ],
+    //                             as:"replyCommentLikes"
+    //                         }
+    //                     },
+    //                     {
+    //                         $lookup : {
+    //                             from : "users",
+    //                             let:{owner:"$owner"},
+    //                             pipeline:[
+    //                                 {
+    //                                     $match : {
+    //                                         $expr : {
+    //                                             $eq : ["$_id","$$owner"]
+    //                                         }
+    //                                     }
+    //                                 }
+    //                             ],
+    //                             as:"owner"
+    //                         }
+    //                     }
+    //                 ],
+    //                 as:"replies"
+    //             }
+    //         },
+    //         {
+    //             $lookup : {
+    //                 from:"users",
+    //                 let:{owner:"$owner"},
+    //                 pipeline:[
+    //                     {
+    //                         $match : {
+    //                             $expr : {
+    //                                 $eq : ["$_id","$$owner"]
+    //                             }
+    //                         }
+    //                     }
+    //                 ],
+    //                 as:"owner"
+                    
+    //             }
+    //         },
+    //         {   
+    //             $lookup : {
+    //                 from : "likes",
+    //                 let:{commentId:"$_id"},
+    //                 pipeline : [
+    //                     {
+    //                         $match : {
+    //                             $expr : {
+    //                                 $eq : ["$comment","$$commentId"]
+    //                             }
+    //                         }
+    //                     }
+    //                 ],
+    //                 as:"commentLikes"
+    //             }
+    //         },
+    //         {
+    //             $unwind : "$owner"
+    //         },
+    //         {
+    //             $addFields : {
+    //                 isLikedComment : {
+    //                     $in : [new mongoose.Types.ObjectId(req?.user?._id),"$commentLikes.likedBy"]
+    //                 },
+    //                 totalCommentLikes : {
+    //                     $size : "$commentLikes"
+    //                 }
+    //             }
+    //         },
+    //         {
+    //             $project : {
+    //                 _id:1,
+    //                 content:1,
+    //                 video:1,
+    //                 parentId:1,
+    //                 createdAt:1,
+    //                 updatedAt:1,
+    //                 replies : {
                         
-                    }
-                },
-                {   
-                    $lookup : {
-                        from : "likes",
-                        let:{commentId:"$_id"},
-                        pipeline : [
-                            {
-                                $match : {
-                                    $expr : {
-                                        $eq : ["$comment","$$commentId"]
-                                    }
-                                }
-                            }
-                        ],
-                        as:"commentLikes"
-                    }
-                },
-                {
-                    $unwind : "$owner"
-                },
-                {
-                    $addFields : {
-                        isLikedComment : {
-                            $in : [new mongoose.Types.ObjectId(req?.user?._id),"$commentLikes.likedBy"]
-                        },
-                        totalCommentLikes : {
-                            $size : "$commentLikes"
-                        }
-                    }
-                },
-                {
-                    $project : {
-                        _id:1,
-                        content:1,
-                        video:1,
-                        parentId:1,
-                        createdAt:1,
-                        updatedAt:1,
-                        replies : {
-                            
-                            $map : {
-                                input : "$replies",
-                                as:"reply",
-                                in : {
-                                    content: "$$reply.content",
-                                    _id: "$$reply._id",
-                                    video: "$$reply.video",
-                                    parentId: "$$reply.parentId",
-                                    createdAt: "$$reply.createdAt",
-                                    updatedAt: "$$reply.updatedAt",
-                                    owner: {
-                                        
-                                        $arrayElemAt: [
-                                            { 
-                                                $map: {
-                                                    input: "$$reply.owner",
-                                                    as: "owner",
-                                                    in: {
-                                                        _id: "$$owner._id",
-                                                        email: "$$owner.email",
-                                                        username: "$$owner.username",
-                                                        fullname: "$$owner.fullname",
-                                                        avatar: "$$owner.avatar"
-                                                    }
-                                                }
-                                            },
-                                            0
-                                        ]
-                                    }
-                                      
-                                }
-                            }
+    //                     $map : {
+    //                         input : "$replies",
+    //                         as:"reply",
+    //                         in : {
+    //                             content: "$$reply.content",
+    //                             _id: "$$reply._id",
+    //                             video: "$$reply.video",
+    //                             parentId: "$$reply.parentId",
+    //                             createdAt: "$$reply.createdAt",
+    //                             updatedAt: "$$reply.updatedAt",
+    //                             owner: {
+                                    
+    //                                 $arrayElemAt: [
+    //                                     { 
+    //                                         $map: {
+    //                                             input: "$$reply.owner",
+    //                                             as: "owner",
+    //                                             in: {
+    //                                                 _id: "$$owner._id",
+    //                                                 email: "$$owner.email",
+    //                                                 username: "$$owner.username",
+    //                                                 fullname: "$$owner.fullname",
+    //                                                 avatar: "$$owner.avatar"
+    //                                             }
+    //                                         }
+    //                                     },
+    //                                     0
+    //                                 ]
+    //                             }
                                   
-                        },
-                        totalCommentLikes:1,
-                        isLikedComment:1,
-                        "owner._id" : 1,
-                        "owner.email" : 1,
-                        "owner.username" : 1,   
-                        "owner.fullname" : 1 ,
-                        "owner.avatar" : 1,
+    //                         }
+    //                     }
+                              
+    //                 },
+    //                 totalCommentLikes:1,
+    //                 isLikedComment:1,
+    //                 "owner._id" : 1,
+    //                 "owner.email" : 1,
+    //                 "owner.username" : 1,   
+    //                 "owner.fullname" : 1 ,
+    //                 "owner.avatar" : 1,
 
 
-                        
-                    }
+                    
+    //             }
+    //         }
+    //     ]
+    // );
+    const comments = await commentModel.aggregate(
+    [
+        {
+            $match : {
+                $expr : {
+                    $and : [
+
+                        {$eq : ["$video",new mongoose.Types.ObjectId(videoId)]},
+                        {$eq : ["$parentId",null]}
+
+                    ],
                 }
-            ]
-    );
+            }
+        },
+        {
+            $lookup : {
+                from:"users",
+                let:{owner:"$owner"},
+                pipeline:[
+                    {
+                        $match : {
+                            $expr : {
+                                $eq : ["$_id","$$owner"]
+                            }
+                        }
+                    }
+                ],
+                as:"owner"
+                
+            }
+        },
+        {
+            $lookup : {
+                from : "comments",
+                let:{commentId:"$_id"},
+                pipeline : [
+                    {
+                        $match : {
+                            $expr : {
+                                $eq : ["$parentId","$$commentId"]
+                            }
+                        }
+                    }
+                ],
+                as:"replies"
+            }
+        },
+        {   
+            $lookup : {
+                from : "likes",
+                let:{commentId:"$_id"},
+                pipeline : [
+                    {
+                        $match : {
+                            $expr : {
+                                $eq : ["$comment","$$commentId"]
+                            }
+                        }
+                    }
+                ],
+                as:"commentLikes"
+            }
+        },
+        {
+            $unwind : "$owner"
+        },
+        {
+            $addFields : {
+                isLikedComment : {
+                    $in : [new mongoose.Types.ObjectId(req?.user?._id),"$commentLikes.likedBy"]
+                },
+                totalCommentLikes : {
+                    $size : "$commentLikes"
+                },
+                totalReplies : {
+                    $size : "$replies"
+                }
+            }
+        },
+        {
+            $project : {
+                _id:1,
+                content:1,
+                video:1,
+                parentId:1,
+                createdAt:1,
+                updatedAt:1,
+                totalCommentLikes:1,
+                totalReplies:1,
+                isLikedComment:1,
+                "owner._id" : 1,
+                "owner.email" : 1,
+                "owner.username" : 1,   
+                "owner.fullname" : 1 ,
+                "owner.avatar" : 1,
+
+
+                
+            }
+        }
+    ]
+);
 
     if(!comments){
         throw new ApiError(500,"Error : server busy");
@@ -316,6 +419,24 @@ const editComment = asyncHandler( async (req,res) => {
     )
 } )
 
+const getCommentReplies = asyncHandler( async (req,res) => {
+
+    const {commentId,page,limit} = req?.query;
+    console.log(commentId,page,limit)
+
+    if([commentId,page,limit].some( (field) => String( field ?? "" ).trim().length < 1)){
+        throw new ApiError(404,"Error: Content and VideoId Is required");
+    }
+
+    const pageNumber = parseInt(page);
+    const limitNumber = parseInt(limit);
+
+    const skip = (pageNumber - 1) * limitNumber;
+    console.log(skip)
+    const replies = await commentModel.find( { parentId : new mongoose.Types.ObjectId(commentId)}).populate({path:"owner",select:"avatar _id username email createdAt updatedAt "}).sort({createdAt:-1}).skip(skip).limit(limit)
+
+    return res.json( new ApiResponse(replies,true,"Comment Replies Successfully Fetched",200))
+} )
 
 
 export {
@@ -324,4 +445,5 @@ export {
     replyComment,
     deleteComment,
     editComment,
+    getCommentReplies
 };

@@ -83,6 +83,7 @@ const getAllVideos = asyncHandler( async (req,res) => {
 const watchVideo = asyncHandler( async (req,res) => {
     
     const { v } = req.params;
+    console.log(v)
 
     // const video = await videoModel.aggregate(
     //     [
@@ -507,6 +508,7 @@ const watchVideo = asyncHandler( async (req,res) => {
                 watchHistory:new mongoose.Types.ObjectId(v)
             }
         },{new:true})
+        console.log(updateWatchHistory)
     }
 
     
@@ -765,6 +767,93 @@ const relatedVideos = asyncHandler(async (req,res) => {
 
 })
 
+const searchVideos = asyncHandler(async (req,res) => {
+    const {query} = req.query;
+    const findMatchedVideosByTitleAndDescription = await videoModel.find(
+        {
+            $or : [
+                { title : {$regex : query,$options:"i"}},
+                { description : {$regex : query,$options:"i"}},
+            ]
+        },
+    ).sort({createdAt:-1}).select("title description");
+    return res.json(new ApiResponse(findMatchedVideosByTitleAndDescription,true,"Matched video successfully featched",200));
+}) 
+
+const searchVideoWithFullDetails = asyncHandler( async (req,res) => {
+    
+    const {q,page=1,limit=10} = req.query;
+    const pageNumber = parseInt(page);
+    const limitNumber = parseInt(limit);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    // const findMatchedVideosByTitleAndDescription = await videoModel.find(
+    //     {
+    //         $or : [
+    //             { title : {$regex : query,$options:"i"}},
+    //             { description : {$regex : query,$options:"i"}},
+    //         ]
+    //     },
+    // ).sort({createdAt:-1}).select("title description");
+
+    const findMatchedVideosByTitleAndDescription = await videoModel.aggregate( [
+        {
+            $match : {
+                $expr : {
+                    $or : [
+                        { $regexMatch: { input: "$title", regex: q, options: "i" } } ,
+                        { $regexMatch: { input: "$description", regex: q, options: "i" } } 
+                    ]
+                }
+            }
+        },
+        {
+            $sort : {
+                createdAt:-1,
+            }
+        },
+        {
+            $lookup : {
+                from : "users",
+                let:{owner:"$owner"},
+                pipeline:[
+                    {
+                        $match : {
+                            $expr : {
+                                $eq : ["$_id","$$owner"]
+                            }
+                        }
+                    }
+                ],
+                as:"owner"
+            }
+        },
+        { $skip: skip },
+        { $limit: limitNumber },
+        { $unwind: "$owner" },
+        {
+            $project : {
+                _id:1,
+                videoFile:1,
+                thumbnail:1,
+                views:1,
+                duration:1,
+                createdAt:1,
+                updatedAt:1,
+                title:1,
+                description:1,
+                "owner.fullname":1,
+                "owner.avatar":1,
+                "owner.username":1,
+                "owner._id":1,
+
+            }
+        }
+    ] );
+
+    return res.json(new ApiResponse(findMatchedVideosByTitleAndDescription,true,"Successfully fetched videos",200));
+
+})
 
 export {
     watchVideo,
@@ -774,4 +863,6 @@ export {
     updateVideo,
     updateVideoView,
     relatedVideos,
+    searchVideos,
+    searchVideoWithFullDetails
 }

@@ -8,16 +8,17 @@ import { isValidObjectId } from "../utils/mongooseObjectId.js";
 
 const createPlaylist = asyncHandler( async (req,res) => {
 
-    const {playlistName,playlistDescription,videoId} = req.body;
+    const {title,playlistDescription,videoId,visibility} = req.body;
 
     
-    if ([playlistName, videoId].some(field => (field?.trim?.() ?? "") === "")) {
-        throw new ApiError(404, "Playlist name or video ID is missing or empty");
+    if ([title, videoId,visibility].some(field => (field?.trim?.() ?? "") === "")) {
+        throw new ApiError(404, "title or video ID is missing or empty");
     }
 
     const playlist = await playlistModel.create({
         videos:videoId,
-        name:playlistName,
+        name:title,
+        visibility:visibility.toUpperCase(),
         description:playlistDescription || "",
         owner:req.user.id
     });
@@ -125,6 +126,7 @@ const removeVideoFromPlaylist = asyncHandler( async (req,res) => {
 
 const addVideoToPlaylist = asyncHandler( async (req,res) => {
     const {videoId,playlistId} = req.params;
+    console.log(req?.params)
 
     if ([playlistId, videoId].some(field => (field?.trim?.() ?? "") === "")) {
         throw new ApiError(404, "Playlist name or video ID is missing or empty");
@@ -173,15 +175,16 @@ const getUserPlaylists = asyncHandler( async (req,res) => {
 
 const getPlaylistById = asyncHandler( async (req,res) => {
     const {playlistId} = req.params;
-    
+    console.log(playlistId)
     if(!playlistId){
         throw new ApiError(404,"Error: Playlistid is undefind");
     }
-    
+    console.log(playlistId)
     const checkObjIdForPlayListId = await isValidObjectId(playlistId);
     if(checkObjIdForPlayListId == false){
         throw new ApiError(403,"Error: Invalid object id");
     }
+    console.log(playlistId)
 
     const playlist = await playlistModel.aggregate(
         [
@@ -244,9 +247,6 @@ const getPlaylistById = asyncHandler( async (req,res) => {
                 $unwind : "$owner"
             },
             {
-                $
-            },
-            {
                 $project : {
                     _id:1,
                     name:1,
@@ -262,6 +262,7 @@ const getPlaylistById = asyncHandler( async (req,res) => {
                                 title:"$$video.title",
                                 description:"$$video.description",
                                 createdAT:"$$video.createdAT",
+                                videoFile:"$$video.videoFile",
                                 updatedAt:"$$video.updatedAt",
                                 views:"$$video.views",
                                 owner : {
@@ -284,13 +285,14 @@ const getPlaylistById = asyncHandler( async (req,res) => {
 
         ]
     );
+    console.log(playlist)
 
     if(!playlist){
         throw new ApiError(404,"Error: Playlist is not find")
     }
 
     return res.json(
-        new ApiResponse(playlist,true,"Playlist is fetched",200)
+        new ApiResponse(playlist[0],true,"Playlist is fetched",200)
     )
 });
 
