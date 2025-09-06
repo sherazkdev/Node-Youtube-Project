@@ -7,7 +7,7 @@ import jwt from "jsonwebtoken";
 import subscriptionModel from "../models/subscription.model.js";
 import VideoModel from "../models/video.model.js"
 import mongoose from "mongoose";
-import asyncHandler from "../utils/asyncHanlder.js";
+import asyncHandler from "../utils/AsyncHandler.js";
 import e from "express";
 
 const genrateAccessTokenAndRefreshToken = async ( userId ) => {

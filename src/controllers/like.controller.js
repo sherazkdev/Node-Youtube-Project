@@ -2,7 +2,7 @@ import likeModel from "../models/like.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import commentModel from "../models/comment.modle.js";
-import asyncHandler from "../utils/asyncHanlder.js";
+import asyncHandler from "../utils/AsyncHandler.js";
 import mongoose from "mongoose";
 import videoModel from "../models/video.model.js";
 

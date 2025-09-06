@@ -6,7 +6,7 @@ import ApiResponse from "../utils/ApiResponse.js";
 import { isValidObjectId } from "mongoose";
 import apiResponse from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
-import asyncHandler from "../utils/asyncHanlder.js";
+import asyncHandler from "../utils/AsyncHandler.js";
 import subscriptionModel from "../models/subscription.model.js";
 import mongoose from "mongoose";
 import videoModel from "../models/video.model.js";

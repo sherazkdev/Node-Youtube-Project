@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import playlistModel from "../models/playlist.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
-import asyncHandler from "../utils/asyncHanlder.js";
+import asyncHandler from "../utils/AsyncHandler.js";
 import { isValidObjectId } from "../utils/mongooseObjectId.js";
 
 
