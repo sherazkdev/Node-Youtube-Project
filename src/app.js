@@ -9,7 +9,7 @@ app.use( express.json() );
 app.use( express.urlencoded( { extended : true } ) );
 app.use( cookieParser() );
 app.use(cors({
-    origin: process?.env?.CORS_ORIGIN, // React app origin
+    origin: process?.env?.CORS_ORIGIN || "https://youtube-streaming-frontend.netlify.app", // React app origin
     credentials: true
   }));
 
