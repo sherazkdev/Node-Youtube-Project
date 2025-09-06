@@ -144,8 +144,9 @@ const loginUser = asyncHandler( async (req,res) => {
     const loggedInUser = await UserModel.findOne({_id:checkUser._id}).select("-password -refreshToken");
 
     const cookiesOptions = {
-        httpOnly:false,
-        secure:true
+        httpOnly:true,
+        secure:true,
+        sameSite:"None"
     };
 
     return res.status(200)
@@ -473,8 +474,9 @@ const logoutUser = asyncHandler( async (req,res) => {
     );
 
     const cookiesOptions = {
-        httpOnly:false,
-        secure:true
+        httpOnly:true,
+        secure:true,
+        sameSite:"None"
     };
 
     return res.status(200)
@@ -528,6 +530,7 @@ const accessRefreshToken = asyncHandler( async (req,res) => {
         const Options = {
             httpOnly:true,
             secure:true,
+            sameSite:"None",
         };
             
         return res.status(200)
