@@ -7,6 +7,7 @@ import {createPlaylist,
         addVideoToPlaylist,
         getWatchLaterPlaylist,
         getUserPlaylists,
+        // getLikeVideosPlaylist,
         getPlaylistById} from "../controllers/playlist.controller.js";
 // Middlewares
 
@@ -20,6 +21,7 @@ playlistRouter.route("/remove-video-from-playlist/:playlistId/:videoId").patch(r
 playlistRouter.route("/add-video-to-playlist/:playlistId/:videoId").patch(addVideoToPlaylist);
 playlistRouter.route("/my-playlists").get(getUserPlaylists);
 playlistRouter.route("/get-watch-later-playlist").get(verifyJsonWebToken,getWatchLaterPlaylist);
+// playlistRouter.route("/get-liked-videos-playlist").get(verifyJsonWebToken,getLikeVideosPlaylist);
 playlistRouter.route("/playlist/:playlistId").get(getPlaylistById);
 
 

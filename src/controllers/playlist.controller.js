@@ -4,6 +4,7 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/AsyncHandler.js";
 import { isValidObjectId } from "../utils/mongooseObjectId.js";
+import userModel from "../models/user.model.js"
 
 
 const createPlaylist = asyncHandler( async (req,res) => {
@@ -175,16 +176,13 @@ const getUserPlaylists = asyncHandler( async (req,res) => {
 
 const getPlaylistById = asyncHandler( async (req,res) => {
     const {playlistId} = req.params;
-    console.log(playlistId)
     if(!playlistId){
         throw new ApiError(404,"Error: Playlistid is undefind");
     }
-    console.log(playlistId)
     const checkObjIdForPlayListId = await isValidObjectId(playlistId);
     if(checkObjIdForPlayListId == false){
         throw new ApiError(403,"Error: Invalid object id");
     }
-    console.log(playlistId)
 
     const playlist = await playlistModel.aggregate(
         [
@@ -277,6 +275,7 @@ const getPlaylistById = asyncHandler( async (req,res) => {
                     owner:{
                         _id:"$owner._id",
                         username:"$owner.username",
+                        fullname:"$owner.fullname",
                         avatar:"$owner.avatar",
                         email:"$owner.email"
                     },
@@ -285,8 +284,6 @@ const getPlaylistById = asyncHandler( async (req,res) => {
 
         ]
     );
-    console.log(playlist)
-
     if(!playlist){
         throw new ApiError(404,"Error: Playlist is not find")
     }
@@ -339,21 +336,21 @@ const getWatchLaterPlaylist = asyncHandler( async (req,res) => {
                         }
                     },
                     {
-                        $lookup : {
+                        $lookup : { 
                             from : "users",
-                            let:{videoOwner:"$owner"},
-                            pipeline : [
+                            let:{owner:"$owner"},
+                            pipeline:[
                                 {
-                                    $match : { 
+                                    $match : {
                                         $expr : {
-                                            $eq : ["$_id","$$videoOwner"]
+                                            $eq : ["$_id","$$owner"]
                                         }
                                     }
                                 }
                             ],
                             as:"owner"
                         }
-                    }
+                    }       
                 ],
                 as:"videos"
             }
@@ -387,11 +384,10 @@ const getWatchLaterPlaylist = asyncHandler( async (req,res) => {
                             updatedAt:"$$video.updatedAt",
                             duration:"$$video.duration",
                             owner : {
-                                $arrayElemAt : ["$$video.owner.fullname",0],
-                                $arrayElemAt : ["$$video.owner.email",0],
-                                $arrayElemAt : ["$$video.owner.avatar",0],
-                                $arrayElemAt : ["$$video.owner._id",0],
-                                $arrayElemAt : ["$$video.username._id",0],
+                                fullname: {$arrayElemAt : ["$$video.owner.fullname",0]},
+                                email : {$arrayElemAt : ["$$video.owner.email",0]},
+                                avatar : {$arrayElemAt : ["$$video.owner.avatar",0]},
+                                _id : {$arrayElemAt : ["$$video.owner._id",0]},
                             }
                         }
                     }
@@ -407,6 +403,114 @@ const getWatchLaterPlaylist = asyncHandler( async (req,res) => {
         new ApiResponse(watchLaterPlaylist,true,"Watch later playlist fetched succesfull",200)
     )
 });
+
+// tommorrow continue work in this function finaly push into github
+// const getLikeVideosPlaylist = asyncHandler( async (req,res) => {
+//     const userId = req.user._id;
+//     const likeVideosPlaylist = await userModel.aggregate( [
+//         {
+//             $match : {
+//                 $expr : {
+//                     $eq : ["$_id",new mongoose.Types.ObjectId(userId)]    
+//                 }
+//             }
+//         },
+//         {
+//             $lookup : { 
+//                 from : "videos",
+//                 let:{video:"$video"},
+//                 pipeline:[
+//                     {
+//                         $match : {
+//                             $expr : {
+//                                 $eq : ["$_id","$$video"]
+//                             }
+//                         }
+//                     }
+//                 ],
+//                 as:"videos"
+//             }
+//         },
+//         {
+//             $lookup : {
+//                 from : "videos",
+//                 let:{videosId:"$videos"},
+//                 pipeline: [
+//                     {
+//                         $match : {
+//                             $expr : {
+//                                 $in : ["$_id","$$videosId"]
+//                             }
+//                         }
+//                     },
+//                     {
+//                         $lookup : { 
+//                             from : "users",
+//                             let:{owner:"$owner"},
+//                             pipeline:[
+//                                 {
+//                                     $match : {
+//                                         $expr : {
+//                                             $eq : ["$_id","$$owner"]
+//                                         }
+//                                     }
+//                                 }
+//                             ],
+//                             as:"owner"
+//                         }
+//                     }       
+//                 ],
+//                 as:"videos"
+//             }
+//         },
+//         {
+//             $unwind : "$owner"
+//         },
+//         {
+//             $project : {
+//                 _id:1,
+//                 name:1,
+//                 description:1,
+//                 createdAt:1,
+//                 updatedAt:1,
+//                 "owner._id":1,
+//                 "owner.username":1,
+//                 "owner.email":1,
+//                 "owner.avatar":1,
+//                 videos: {
+//                     $map : {
+//                         input : "$videos",
+//                         as:"video",
+//                         in : {
+//                             _id:"$$video._id",
+//                             thumbnail:"$$video.thumbnail",
+//                             videoFile:"$$video.videoFile",
+//                             title:"$$video.title",
+//                             createdAt:"$$video.createdAt",
+//                             views:"$$video.views",
+//                             description:"$$video.description",
+//                             updatedAt:"$$video.updatedAt",
+//                             duration:"$$video.duration",
+//                             owner : {
+//                                 fullname: {$arrayElemAt : ["$$video.owner.fullname",0]},
+//                                 email : {$arrayElemAt : ["$$video.owner.email",0]},
+//                                 avatar : {$arrayElemAt : ["$$video.owner.avatar",0]},
+//                                 _id : {$arrayElemAt : ["$$video.owner._id",0]},
+//                             }
+//                         }
+//                     }
+//                 }
+                
+//             }
+//         }
+//     ] );
+//     if(!likeVideosPlaylist){
+//         throw new ApiError(500,"Error: Server is busy")
+//     }
+//     return res.json(
+//         new ApiResponse(likeVideosPlaylist,true,"Watch later playlist fetched succesfull",200)
+//     )
+// });
 
 export {
     createPlaylist,
