@@ -296,6 +296,118 @@ const getPlaylistById = asyncHandler( async (req,res) => {
     )
 });
 
+
+const getWatchLaterPlaylist = asyncHandler( async (req,res) => {
+    const userId = req.user._id;
+    const watchLaterPlaylist = await playlistModel.aggregate( [
+        {
+            $match : {
+                $expr : {
+                    $and : [
+                        {$eq : ["$owner",new mongoose.Types.ObjectId(userId)]},
+                        {$eq : ["$name","Watch Later"]} 
+                    ]
+                }
+            }
+        },
+        {
+            $lookup : { 
+                from : "users",
+                let:{owner:"$owner"},
+                pipeline:[
+                    {
+                        $match : {
+                            $expr : {
+                                $eq : ["$_id","$$owner"]
+                            }
+                        }
+                    }
+                ],
+                as:"owner"
+            }
+        },
+        {
+            $lookup : {
+                from : "videos",
+                let:{videosId:"$videos"},
+                pipeline: [
+                    {
+                        $match : {
+                            $expr : {
+                                $in : ["$_id","$$videosId"]
+                            }
+                        }
+                    },
+                    {
+                        $lookup : {
+                            from : "users",
+                            let:{videoOwner:"$owner"},
+                            pipeline : [
+                                {
+                                    $match : { 
+                                        $expr : {
+                                            $eq : ["$_id","$$videoOwner"]
+                                        }
+                                    }
+                                }
+                            ],
+                            as:"owner"
+                        }
+                    }
+                ],
+                as:"videos"
+            }
+        },
+        {
+            $unwind : "$owner"
+        },
+        {
+            $project : {
+                _id:1,
+                name:1,
+                description:1,
+                createdAt:1,
+                updatedAt:1,
+                "owner._id":1,
+                "owner.username":1,
+                "owner.email":1,
+                "owner.avatar":1,
+                videos: {
+                    $map : {
+                        input : "$videos",
+                        as:"video",
+                        in : {
+                            _id:"$$video._id",
+                            thumbnail:"$$video.thumbnail",
+                            videoFile:"$$video.videoFile",
+                            title:"$$video.title",
+                            createdAt:"$$video.createdAt",
+                            views:"$$video.views",
+                            description:"$$video.description",
+                            updatedAt:"$$video.updatedAt",
+                            duration:"$$video.duration",
+                            owner : {
+                                $arrayElemAt : ["$$video.owner.fullname",0],
+                                $arrayElemAt : ["$$video.owner.email",0],
+                                $arrayElemAt : ["$$video.owner.avatar",0],
+                                $arrayElemAt : ["$$video.owner._id",0],
+                                $arrayElemAt : ["$$video.username._id",0],
+                            }
+                        }
+                    }
+                }
+                
+            }
+        }
+    ] );
+    if(!watchLaterPlaylist){
+        throw new ApiError(500,"Error: Server is busy")
+    }
+    return res.json(
+        new ApiResponse(watchLaterPlaylist,true,"Watch later playlist fetched succesfull",200)
+    )
+});
+
 export {
     createPlaylist,
     removePlaylist,
@@ -303,7 +415,7 @@ export {
     removeVideoFromPlaylist,
     addVideoToPlaylist,
     getUserPlaylists,
-    getPlaylistById
-
+    getPlaylistById,
+    getWatchLaterPlaylist
 
 }
