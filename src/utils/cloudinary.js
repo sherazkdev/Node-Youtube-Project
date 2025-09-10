@@ -20,7 +20,7 @@ const uploadFile = async ( localFile ) => {
 
         if(!localFile) return null;
 
-        const fileUploadResponse = await cloudinary.uploader.upload(localFile,{
+        const fileUploadResponse = await cloudinary.uploader.upload_chunked(localFile,{
             resource_type:"auto"
         });
 

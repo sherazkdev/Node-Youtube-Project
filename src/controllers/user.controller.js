@@ -144,8 +144,9 @@ const loginUser = asyncHandler( async (req,res) => {
     const loggedInUser = await UserModel.findOne({_id:checkUser._id}).select("-password -refreshToken");
 
     const cookiesOptions = {
-        httpOnly:false,
-        secure:true
+        httpOnly:true,
+        secure:true,
+        sameSite:"None"
     };
 
     return res.status(200)
@@ -398,7 +399,7 @@ const getSubscribedNotifications = asyncHandler(async (req,res) => {
         {
             $match : {
                 $expr : {
-                    $in : ["$owner",channels]
+                    $in : ["$owner",channels],
                 }
             }
         },
@@ -430,6 +431,9 @@ const getSubscribedNotifications = asyncHandler(async (req,res) => {
             $skip : skip
         },
         {
+            
+        },
+        {
             $project : {
                 _id:1,
                 videoFile:1,
@@ -443,6 +447,7 @@ const getSubscribedNotifications = asyncHandler(async (req,res) => {
                 "owner.email":1,
                 "owner.username":1,
                 "owner.avatar":1,
+                
 
             }
         }
@@ -473,8 +478,9 @@ const logoutUser = asyncHandler( async (req,res) => {
     );
 
     const cookiesOptions = {
-        httpOnly:false,
-        secure:true
+        httpOnly:true,
+        secure:true,
+        sameSite:"None"
     };
 
     return res.status(200)
@@ -528,6 +534,7 @@ const accessRefreshToken = asyncHandler( async (req,res) => {
         const Options = {
             httpOnly:true,
             secure:true,
+            sameSite:"None",
         };
             
         return res.status(200)
@@ -938,6 +945,106 @@ const removeVideoFromWatchHistory = asyncHandler(async (req,res) => {
 
 })
 
+const getSidebarLatestSubscriptions = asyncHandler(async (req,res) => {
+
+    const data = await UserModel.aggregate( [
+        {
+            $match : {
+                $expr : {
+                    $eq : ["$_id",new mongoose.Types.ObjectId(req.user._id)]
+                }
+            }
+        },
+        {
+            $lookup : {
+                from : "subscriptions",
+                let:{userId:"$_id"},
+                pipeline : [
+                    {
+                        $match : {
+                            $expr : {
+                                $eq : ["$subscriber","$$userId"]
+                            }
+                        }
+                    },
+                    {
+                        $lookup : {
+                            from : "videos",
+                            let:{channel:"$channel"},
+                            pipeline : [
+                                {
+                                    $match : {
+                                        $expr : {
+                                            $and : [
+                                            { $eq : ["$owner","$$channel"]},
+                                            { $gte : ["$createdAt",new Date(Date.now() - 4 * 24 * 60 * 60 * 1000 ) ]}
+                                            ]
+                                        }
+                                    }
+                                }
+                            ],
+                            as:"videos"
+                        }
+                    },
+                    {
+                        $lookup : {
+                            from : "users",
+                            let:{channel:"$channel"},
+                            pipeline : [
+                                {
+                                    $match : {
+                                        $expr : {
+                                            $eq : ["$_id","$$channel"]
+                                        }
+                                    }
+                                }
+                            ],
+                            as:"channel"
+                        }
+                    },
+                    {
+                        $unwind : "$channel"
+                    }
+                ],
+                as:"subscriptions"
+            }
+        },
+        {
+            $project : {
+                _id:1,
+                fullname:1,
+                username:1,
+                email:1,
+                avatar:1,
+                subscriptions : {
+                    $map : {
+                        input:"$subscriptions",
+                        as:"sub",
+                        in : {
+                            _id:"$sub._id",
+                            channel:{
+                                _id:"$$sub.channel._id",
+                                fullname:"$$sub.channel.fullname",
+                                avatar:"$$sub.channel.avatar",
+                                username:"$$sub.channel.username",
+                            },
+                            isRecentlyVideoUploaded:{
+                                $cond : {
+                                    if : {$gt : [{$size : "$$sub.videos"},0]},
+                                    then : true,
+                                    else : false
+                                }
+                            },
+                        }
+                    }
+                } 
+            }
+        }
+    ] )
+
+    return res.json(new ApiResponse(data[0],true,"Sidebar Subscription has been fetched",200));
+
+})
 export {
     registerUser,
     loginUser,
@@ -955,5 +1062,6 @@ export {
     removeVideoFromWatchHistory,
     searchWatchHistory,
     getSubscribedNotifications,
+    getSidebarLatestSubscriptions,
 
 }

@@ -3,15 +3,18 @@ import mongoose from "mongoose";
 const likeSchema = new mongoose.Schema({
     comment:{
         type:mongoose.Types.ObjectId,
-        ref:"User"
+        ref:"Comment",
+        default:null
     },
     video : {
         type:mongoose.Types.ObjectId,
-        ref:"Video"
+        ref:"Video",
+        default:null
     },
     likedBy : {
         type:mongoose.Types.ObjectId,
-        ref:"User"
+        ref:"User",
+        required:true
     },
 
 },{timestamps:true});

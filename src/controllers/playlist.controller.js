@@ -405,112 +405,116 @@ const getWatchLaterPlaylist = asyncHandler( async (req,res) => {
 });
 
 // tommorrow continue work in this function finaly push into github
-// const getLikeVideosPlaylist = asyncHandler( async (req,res) => {
-//     const userId = req.user._id;
-//     const likeVideosPlaylist = await userModel.aggregate( [
-//         {
-//             $match : {
-//                 $expr : {
-//                     $eq : ["$_id",new mongoose.Types.ObjectId(userId)]    
-//                 }
-//             }
-//         },
-//         {
-//             $lookup : { 
-//                 from : "videos",
-//                 let:{video:"$video"},
-//                 pipeline:[
-//                     {
-//                         $match : {
-//                             $expr : {
-//                                 $eq : ["$_id","$$video"]
-//                             }
-//                         }
-//                     }
-//                 ],
-//                 as:"videos"
-//             }
-//         },
-//         {
-//             $lookup : {
-//                 from : "videos",
-//                 let:{videosId:"$videos"},
-//                 pipeline: [
-//                     {
-//                         $match : {
-//                             $expr : {
-//                                 $in : ["$_id","$$videosId"]
-//                             }
-//                         }
-//                     },
-//                     {
-//                         $lookup : { 
-//                             from : "users",
-//                             let:{owner:"$owner"},
-//                             pipeline:[
-//                                 {
-//                                     $match : {
-//                                         $expr : {
-//                                             $eq : ["$_id","$$owner"]
-//                                         }
-//                                     }
-//                                 }
-//                             ],
-//                             as:"owner"
-//                         }
-//                     }       
-//                 ],
-//                 as:"videos"
-//             }
-//         },
-//         {
-//             $unwind : "$owner"
-//         },
-//         {
-//             $project : {
-//                 _id:1,
-//                 name:1,
-//                 description:1,
-//                 createdAt:1,
-//                 updatedAt:1,
-//                 "owner._id":1,
-//                 "owner.username":1,
-//                 "owner.email":1,
-//                 "owner.avatar":1,
-//                 videos: {
-//                     $map : {
-//                         input : "$videos",
-//                         as:"video",
-//                         in : {
-//                             _id:"$$video._id",
-//                             thumbnail:"$$video.thumbnail",
-//                             videoFile:"$$video.videoFile",
-//                             title:"$$video.title",
-//                             createdAt:"$$video.createdAt",
-//                             views:"$$video.views",
-//                             description:"$$video.description",
-//                             updatedAt:"$$video.updatedAt",
-//                             duration:"$$video.duration",
-//                             owner : {
-//                                 fullname: {$arrayElemAt : ["$$video.owner.fullname",0]},
-//                                 email : {$arrayElemAt : ["$$video.owner.email",0]},
-//                                 avatar : {$arrayElemAt : ["$$video.owner.avatar",0]},
-//                                 _id : {$arrayElemAt : ["$$video.owner._id",0]},
-//                             }
-//                         }
-//                     }
-//                 }
+const getLikeVideosPlaylist = asyncHandler( async (req,res) => {
+    const userId = req.user._id;
+    const likeVideos = await userModel.aggregate([
+        {
+          $match: {
+            _id: new mongoose.Types.ObjectId(userId),
+          },
+        },
+        {
+          $lookup: {
+            from: "likes",
+            let: { userId: "$_id" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ["$likedBy", "$$userId"] },
+                      { $eq: ["$comment", null] } 
+                    ],
+                  },
+                },
+              },
+              {
+                $lookup: {
+                  from: "videos",
+                  let:{videoId:"$video"},
+                  pipeline:[
+                    {
+                        $match : {
+                            $expr : {
+                                $eq : ["$_id","$$videoId"]
+                            }
+                        }
+                    },
+                    {
+                        $lookup : {
+                            from : "users",
+                            let:{owner:"$owner"},
+                            pipeline:[
+                                {
+                                    $match : {
+                                        $expr : {
+                                            $eq : ["$_id","$$owner"]
+                                        }
+                                    }
+                                }
+                            ],
+                            as:"owner"
+                        }
+                    },
+                    {
+                        $unwind : "$owner"
+                    }
+                  ],
+                  as:"video"
+                },
+              },
+              { $unwind: "$video" },
+            ],
+            as: "likedVideos",
+          },
+        },
+        {
+            $project : {
+                _id:1,
+                fullname:1,
+                avatar:1,
+                username:1,
+                createdAt:1,
+                updatedAt:1,
+                likeVideos : {
+                    $map : {
+                        input : "$likedVideos",
+                        as:"video",
+                        in : {
+                            _id:"$$video._id",
+                            likedBy:"$$video.likedBy",
+                            video : {
+                                _id:"$$video.video._id",
+                                owner:{
+                                    _id:"$$video.video.owner._id",
+                                    fullname:"$$video.video.owner.fullname",
+                                    avatar:"$$video.video.owner.avatar",
+                                    username:"$$video.video.owner.username",
+                                    email:"$$video.video.owner.email",
+                                },
+                                videoFile:"$$video.video.videoFile",
+                                thumbnail:"$$video.video.thumbnail",
+                                createdAt:"$$video.video.createdAt",
+                                title:"$$video.video.title",
+                                updatedAT:"$$video.video.updatedAT",
+                                duration:"$$video.video.duration",
+                                views:"$$video.video.views",
+                                description:"$$video.video.description",
                 
-//             }
-//         }
-//     ] );
-//     if(!likeVideosPlaylist){
-//         throw new ApiError(500,"Error: Server is busy")
-//     }
-//     return res.json(
-//         new ApiResponse(likeVideosPlaylist,true,"Watch later playlist fetched succesfull",200)
-//     )
-// });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+      ]);      
+    if(!likeVideos){
+        throw new ApiError(500,"Error: Server is busy")
+    }
+    return res.json(
+        new ApiResponse(likeVideos,true,"Watch later playlist fetched succesfull",200)
+    )
+});
 
 export {
     createPlaylist,
@@ -520,6 +524,7 @@ export {
     addVideoToPlaylist,
     getUserPlaylists,
     getPlaylistById,
-    getWatchLaterPlaylist
+    getWatchLaterPlaylist,
+    getLikeVideosPlaylist
 
 }
