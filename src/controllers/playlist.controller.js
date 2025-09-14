@@ -163,14 +163,132 @@ const addVideoToPlaylist = asyncHandler( async (req,res) => {
 
 } );
 
-const getUserPlaylists = asyncHandler( async (req,res) => {
-    const userId = req.user._id;
-    const allPlaylists = await playlistModel.find({owner:new mongoose.Types.ObjectId(userId)});
-    if(!allPlaylists){
-        throw new ApiError(500,"Error: Server is busy")
+const getUserChannelPlaylists = asyncHandler( async (req,res) => {
+    const {username} = req.params;
+    if(!username){
+        throw new ApiError(404,"Username is not found");
     }
+
+    const playlist = await userModel.aggregate( [
+        {
+            $match : {
+                username:username
+            }
+        },
+        {
+            $lookup : {
+                from : "playlists",
+                let:{channelId:"$_id"},
+                pipeline : [
+                    {
+                        $match : {
+                            $expr : {
+                                $eq : ["$owner","$$channelId"]
+                            }
+                        }
+                    },
+                    {
+                        $lookup : {
+                            from : "videos",
+                            let:{videos:"$videos"},
+                            pipeline : [
+                                {
+                                    $match : {
+                                        $expr : {
+                                            $in : ["$_id","$$videos"]
+                                        }
+                                    }
+                                },
+                                {
+                                    $sort : {
+                                        createdAt : -1
+                                    }
+                                }
+                            ],
+                            as:"videos"
+                        }
+                    }
+                ],
+                as:"playlists"
+            }
+        },
+        {
+            $lookup : {
+                from:"subscriptions",
+                localField:"_id",
+                foreignField:"channel",
+                as: "subscribers"
+            }
+        },
+        {
+            $lookup : {
+                
+                from:"videos",
+                localField:"_id",
+                foreignField:"owner",
+                as: "videos"
+            }
+        },        
+        {
+            $addFields : {
+                subscribersCount : {
+                    $size : "$subscribers",
+                },
+                totalVideos:{
+                    $size : "$videos"
+                },
+        
+                toSubscribedChannel: {
+                    $cond: {
+                        if: { $in :  [new mongoose.Types.ObjectId(req.user?._id),"$subscribers.subscriber"]},
+                        then: true,
+                        else: false
+                    }
+            }
+                          
+            }
+        },
+        {
+            $project : {
+                _id:1,
+                username:1,
+                avatar:1,
+                coverImage:1,
+                email:1,
+                fullname:1,
+                createdAt:1,
+                subscribersCount:1,
+                toSubscribedChannel:1,
+                totalVideos:1,
+                playlists : {
+                    $map : {
+                        input : "$playlists",
+                        as:"p",
+                        in : {
+                            name:"$$p.name",
+                            _id:"$$p._id",
+                            description:"$$p.description",
+                            visibility:"$$p.visibility",
+                            createdAt:"$$p.createdtAt",
+                            videos : {
+                                $map : {
+                                    input : "$$p.videos",
+                                    as:"v",
+                                    in : {
+                                        _id:"$$v._id",
+                                        thumbnail:"$$v.thumbnail",
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ] );
+
     return res.json(
-        new ApiResponse(allPlaylists,true,"all playlist fetched succesfull",200)
+        new ApiResponse(playlist[0],true,"all playlist fetched succesfull",200)
     )
 });
 
@@ -515,6 +633,16 @@ const getLikeVideosPlaylist = asyncHandler( async (req,res) => {
         new ApiResponse(likeVideos,true,"Watch later playlist fetched succesfull",200)
     )
 });
+const getUserPlaylists = asyncHandler( async (req,res) => {
+    const userId = req.user._id;
+    const allPlaylists = await playlistModel.find({owner:new mongoose.Types.ObjectId(userId)});
+    if(!allPlaylists){
+        throw new ApiError(500,"Error: Server is busy")
+    }
+    return res.json(
+        new ApiResponse(allPlaylists,true,"all playlist fetched succesfull",200)
+    )
+});
 
 export {
     createPlaylist,
@@ -525,6 +653,7 @@ export {
     getUserPlaylists,
     getPlaylistById,
     getWatchLaterPlaylist,
-    getLikeVideosPlaylist
+    getLikeVideosPlaylist,
+    getUserChannelPlaylists,
 
 }

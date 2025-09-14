@@ -20,12 +20,9 @@ const uploadFile = async ( localFile ) => {
 
         if(!localFile) return null;
 
-        const fileUploadResponse = await cloudinary.uploader.upload_chunked(localFile,{
+        const fileUploadResponse = await cloudinary.uploader.upload(localFile,{
             resource_type:"auto"
         });
-
-        // file uploaded successfull
-        const delFile = await fs.unlinkSync(localFile);
         
         return fileUploadResponse;
 

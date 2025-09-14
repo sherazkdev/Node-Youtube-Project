@@ -1,13 +1,20 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors"
-
 const app = express();
 
 // MiddleWarse
 app.use( express.json() );
 app.use( express.urlencoded( { extended : true } ) );
 app.use( cookieParser() );
+app.use( (req,res,next) => {
+  res.setTimeout( 1200000, () => {
+    const err = new Error( "Request has timed out." );
+    err.status = 408;
+    next( err );
+  });
+  next();
+})
 app.use(cors({
     origin: process?.env?.CORS_ORIGIN || "https://youtube-streaming-frontend.netlify.app", // React app origin
     credentials: true

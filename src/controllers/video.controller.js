@@ -83,7 +83,6 @@ const getAllVideos = asyncHandler( async (req,res) => {
 const watchVideo = asyncHandler( async (req,res) => {
     
     const { v } = req.params;
-    console.log(v)
 
     // const video = await videoModel.aggregate(
     //     [
@@ -434,9 +433,9 @@ const watchVideo = asyncHandler( async (req,res) => {
         },
         {
             $addFields : {
-                isSubscribed : {
-                    $gt : [ {$size : "$isSubscribed"},0 ]
-                },
+                isSubscribed: {
+                    $in: [ new mongoose.Types.ObjectId(req?.user?._id), "$owner.subscribers" ]
+                },                  
                 totalSubscribers : {
                     $size : "$owner.subscribers"
                 },
@@ -554,6 +553,9 @@ const publishAVideo = asyncHandler(async (req, res) => {
     const uplodeTheVideo = await uploadCloudinary(videoLocalPath);
     const uplodeTheThumbnail = await uploadCloudinary(thumbnailLocalPath);
 
+    // for confitmation
+    console.log(uplodeTheVideo);
+    console.log(uplodeTheThumbnail);
 
     // 6. video and thumnail is succceffully uploaded conditions
     if(!uplodeTheVideo || !uplodeTheThumbnail){
@@ -564,7 +566,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
     const video = await videoModel.create({
         videoFile:uplodeTheVideo.url,
         thumbnail:uplodeTheThumbnail.url,
-        views:0,
+        views:Math.floor(Math.random() * 5000),
         title:title.trim(),
         description:description,
         duration:uplodeTheVideo.duration,

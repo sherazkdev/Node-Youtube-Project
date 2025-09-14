@@ -699,10 +699,120 @@ const getUserChannelProfile = asyncHandler( async (req,res) => {
         {
             $lookup : {
                 
-                from:"subscriptions",
+                from:"videos",
                 localField:"_id",
-                foreignField:"channel",
-                as: "subscribedTo"
+                foreignField:"owner",
+                as: "videos"
+            }
+        },
+        {
+            $lookup : {
+                from : "videos",
+                let:{ownerId:"$_id"},
+                pipeline : [
+                    {
+                        $facet : {
+                            latest : [
+                                {
+                                    $match : {
+                                        $expr : { $eq: ["$owner","$$ownerId"]}
+                                    }
+                                },
+                                {
+                                    $sort : { createdAt : -1}
+                                },
+                                {
+                                    $limit : 1
+                                },
+                                {
+                                    $lookup : {
+                                        from : "users",
+                                        let:{owner:"$owner"},
+                                        pipeline : [
+                                            {
+                                                $match : {
+                                                    $expr : {
+                                                        $eq : ["$_id","$$owner"]
+                                                    }
+                                                }
+                                            }
+                                        ],
+                                        as:"owner"
+                                    }
+                                },
+                                {
+                                    $unwind : "$owner"
+                                }
+                            ],
+                            popular : [
+                                {
+                                    $match : {
+                                        $and : [
+                                            {$expr : {$eq : ["$owner","$$ownerId"]}},
+                                            {$expr : { $gte : ["$views",1000]}}
+                                        ]
+                                        
+                                    }
+                                },
+                                {
+                                    $sort : { views : -1}
+                                },
+                                {
+                                    $limit : 12
+                                },
+                                {
+                                    $lookup : {
+                                        from : "users",
+                                        let:{owner:"$owner"},
+                                        pipeline : [
+                                            {
+                                                $match : {
+                                                    $expr : {
+                                                        $eq : ["$_id","$$owner"]
+                                                    }
+                                                }
+                                            }
+                                        ],
+                                        as:"owner"
+                                    }
+                                },      
+                                {
+                                    $unwind : "$owner"
+                                }
+                            ],
+                            randomVideos : [
+                                {
+                                    $match : {
+                                        $expr : {$eq : ["$owner","$$ownerId"]}
+                                    }
+                                },
+                                {
+                                    $limit : 12
+                                },
+                                {
+                                    $lookup : {
+                                        from : "users",
+                                        let:{owner:"$owner"},
+                                        pipeline : [
+                                            {
+                                                $match : {
+                                                    $expr : {
+                                                        $eq : ["$_id","$$owner"]
+                                                    }
+                                                }
+                                            }
+                                        ],
+                                        as:"owner"
+                                    }
+                                },
+                                {
+                                    $unwind : "$owner"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                as:"channelVideos"
             }
         },
         {
@@ -711,8 +821,8 @@ const getUserChannelProfile = asyncHandler( async (req,res) => {
                     $size : "$subscribers",
                 },
 
-                channelSubscribeToCount:{
-                    $size : "$subscribedTo"
+                totalVideos:{
+                    $size : "$videos"
                 },
 
                 toSubscribedChannel: {
@@ -721,31 +831,50 @@ const getUserChannelProfile = asyncHandler( async (req,res) => {
                       then: true,
                       else: false
                     }
-                  }
+                }
                   
             }
         },
         {
-            $project : {
-                fullname:1,
-                email:1,
-                subscribers : 1,
-                subscribedTo : 1,
-                toSubscribedChannel : 1,
-                subscribersCount : 1,
-                subscribersCount : 1,
-                username : 1,
-                channelSubscribeToCount: 1,
+            $project: {
+                fullname: 1,
+                avatar: 1,
+                coverImage: 1,
+                email: 1,
+                subscribers: 1,
+                subscribedTo: 1,
+                toSubscribedChannel: 1,
+                subscribersCount: 1,
+                username: 1,
+                allVideos: {
+                    latest: { 
+                        $arrayElemAt: ["$channelVideos.latest", 0] 
+                    },
+                    popular: { 
+                    $setDifference: [
+                        "$channelVideos.popular", 
+                        { $setUnion: [{$arrayElemAt: ["$channelVideos.latest", 0]}, "$channelVideos.videos"] }
+                    ] 
+                    },
+                    others: { 
+                    $setDifference: [
+                        "$channelVideos.randomVideos", 
+                        { $setUnion: [{$arrayElemAt: ["$channelVideos.latest", 0]}, "$channelVideos.popular"] }
+                    ] 
+                }
             }
+              
+        }
+          
         }
     ]);
 
-    if(!userChannel){
+    if(!userChannel.length > 0  ){
         throw new ApiError(404,"Channel Not Found");
     }
 
     return res.status(200)
-    .json( new ApiResponse(userChannel,true,"channel data",200) )
+    .json( new ApiResponse(userChannel[0],true,"channel data",200) )
 
 } )
 
@@ -1045,6 +1174,96 @@ const getSidebarLatestSubscriptions = asyncHandler(async (req,res) => {
     return res.json(new ApiResponse(data[0],true,"Sidebar Subscription has been fetched",200));
 
 })
+
+const getChannelVideos = asyncHandler( async (req,res) => {
+    const {username} = req.params;
+    if(!username){
+        throw new ApiError(404,"ChannelId is required");
+    }
+    const channelVideos = await UserModel.aggregate( [
+        {
+            $match : {
+                username : username
+            }
+        },
+        {
+            $lookup : {
+                from : "videos",
+                let:{userId:"$_id"},
+                pipeline : [
+                    {
+                        $match : {
+                            $expr : {
+                                $eq : ["$owner","$$userId"]
+                            }
+                        }
+                    },
+                    {
+                        $sort : {
+                            created:-1,
+                        }
+                    },
+                    {
+                        $lookup : {
+                            from : "users",
+                            let : {owner:"$owner"},
+                            pipeline : [
+                                {
+                                    $match : {
+                                        $expr : {
+                                            $eq : ["$_id","$$owner"]
+                                        }
+                                    }
+                                }
+                            ],
+                            as:"owner"
+                        }
+                    },
+                    {
+                        $unwind : "$owner"
+                    }
+                ],
+                as:"videos"
+            }
+        },
+        {
+            $project : {
+                _id:1,
+                fullname:1,
+                username:1,
+                coverImage:1,
+                avatar:1,
+                thumbnail:1,
+                createdAt:1,
+                videos : {
+                    $map : {
+                        input : "$videos",
+                        as:"v",
+                        in : {
+                            _id:"$$v._id",
+                            title:"$$v.title",
+                            description:"$$v.description",
+                            createdAt:"$$v.createdAt",
+                            duration:"$$v.duration",
+                            views:"$$v.views",
+                            thumbnail:"$$v.thumbnail",
+                            videoFile:"$$v.videoFile",
+                            owner : {
+                                fullname:"$$v.owner._id",
+                                username:"$$v.owner.username",
+                                avatar:"$$v.owner.avatar",
+                                createdAt:"$$v.owner.createdAt",
+                                coverImage:"$$v.owner.coverImage",
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ] )
+    return res.json(new ApiResponse(channelVideos[0],true,"Channel Videos Successfully fetched",200));
+} );
+
 export {
     registerUser,
     loginUser,
@@ -1063,5 +1282,6 @@ export {
     searchWatchHistory,
     getSubscribedNotifications,
     getSidebarLatestSubscriptions,
+    getChannelVideos,
 
 }
