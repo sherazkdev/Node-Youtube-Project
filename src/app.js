@@ -7,14 +7,6 @@ const app = express();
 app.use( express.json() );
 app.use( express.urlencoded( { extended : true } ) );
 app.use( cookieParser() );
-app.use( (req,res,next) => {
-  res.setTimeout( 1200000, () => {
-    const err = new Error( "Request has timed out." );
-    err.status = 408;
-    next( err );
-  });
-  next();
-})
 app.use(cors({
     origin: process?.env?.CORS_ORIGIN, 
     credentials: true
