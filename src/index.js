@@ -7,12 +7,13 @@ dotenv.config({
 });
 
 
-connectDB().then( () => {
-
-    app.listen(process.env.PORT || 5000,() => {
-        console.log(`server running at this Port:${process.env.PORT}`);
-    })
-
+await connectDB().then( () => {
+    console.log(`\n Database Connected Successfully`);
 }).catch( (error) => {
     console.log("error from index js after function colling",error)
 })
+
+
+export default (req,res) => {
+    app(req,res);
+}
