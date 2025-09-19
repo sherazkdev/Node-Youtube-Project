@@ -16,7 +16,7 @@ app.use( (req,res,next) => {
   next();
 })
 app.use(cors({
-    origin: process?.env?.CORS_ORIGIN || "https://youtube-streaming-frontend.netlify.app", // React app origin
+    origin: process?.env?.CORS_ORIGIN, 
     credentials: true
   }));
 

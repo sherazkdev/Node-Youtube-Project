@@ -70,13 +70,10 @@ const getAllVideos = asyncHandler( async (req,res) => {
     if(!videos){
         throw new ApiError(401,"error from videos fetching")
     }
-
-    setTimeout( () => {
-        return res.json(
-            new ApiResponse(videos,true,"Videos Successfully Feteched",200)
-        )
-    },3000 )
-
+    
+    return res.json(
+        new ApiResponse(videos,true,"Videos Successfully Feteched",200)
+    )
     
 });
 
