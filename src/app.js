@@ -41,5 +41,8 @@ app.use("/api/v1/likes",likeRouter);
 app.use("/api/v1/subscriptions",subscriptionRouter);
 app.use("/api/v1/comments",commentRouter);
 app.use("/api/v1/playlists",playlistRouter);
+
+// error Handler
 app.use(errorHandler); 
-export {app};
+
+export default app;
