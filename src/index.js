@@ -6,6 +6,15 @@ dotenv.config({
     path:"./.env"
 });
 
-await connectDB().catch( (error) => new Error(error));
+const MongooseConnection = async () => {
+    try {
+        await connectDB();
+    } catch (error) {
+        console.log(error);
+        process.exit(1);
+    }
+}
+
+await MongooseConnection();
 
 export default app;
