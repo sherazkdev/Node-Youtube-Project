@@ -22,7 +22,7 @@ videoRouter.route("/update-video").post(verifyJsonWebToken,upload.single("thumbn
 videoRouter.route("/publish-video").post(verifyJsonWebToken,upload.fields([{name:"videoFile",maxCount:1},{name:"thumbnail",maxCount:1}]),publishAVideo);
 videoRouter.route("/delete-video/:videoId").delete(verifyJsonWebToken,deleteVideo);
 videoRouter.route("/search-query").get(searchVideos);
-videoRouter.route("/update-video-views").patch(verifyJsonWebToken,upload.none(),updateVideoView);
+videoRouter.route("/update-video-views").patch(upload.none(),updateVideoView);
 videoRouter.route("/search-video-by-title-or-description").get(searchVideoWithFullDetails);
 
 

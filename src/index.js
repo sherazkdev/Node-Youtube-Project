@@ -19,6 +19,6 @@ const MongooseConnection = async () => {
 
 await MongooseConnection();
 
-app.listen(Port,() => console.log(` Port at running this port http://localhost:${Port}`));
+// app.listen(Port,() => console.log(` Port at running this port http://localhost:${Port}`));
 
-// export default app;
+export default app;
