@@ -6,6 +6,8 @@ dotenv.config({
     path:"./.env"
 });
 
+const Port = process.env.PORT || process.env.PORT + 1 || process.env.PORT + 2;
+
 const MongooseConnection = async () => {
     try {
         await connectDB();
@@ -17,4 +19,6 @@ const MongooseConnection = async () => {
 
 await MongooseConnection();
 
-export default app;
+app.listen(Port,() => console.log(` Port at running this port http://localhost:${Port}`));
+
+// export default app;

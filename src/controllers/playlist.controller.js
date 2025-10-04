@@ -635,7 +635,7 @@ const getLikeVideosPlaylist = asyncHandler( async (req,res) => {
 });
 const getUserPlaylists = asyncHandler( async (req,res) => {
     const userId = req.user._id;
-    const allPlaylists = await playlistModel.find({owner:new mongoose.Types.ObjectId(userId)});
+    const allPlaylists = await playlistModel.find({owner:new mongoose.Types.ObjectId(userId)}).populate("videos");
     if(!allPlaylists){
         throw new ApiError(500,"Error: Server is busy")
     }

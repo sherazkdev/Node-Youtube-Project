@@ -57,6 +57,7 @@ const getAllVideos = asyncHandler( async (req,res) => {
                     views:1,
                     isPublished:1,
                     title:1,
+                    createdAt:1,
                     "owner._id":1,
                     "owner.avatar":1,
                     "owner.username":1,
@@ -503,10 +504,10 @@ const watchVideo = asyncHandler( async (req,res) => {
             $addToSet : {
                 watchHistory:new mongoose.Types.ObjectId(v)
             }
-        },{new:true})
-        console.log(updateWatchHistory)
+        },{new:true});
     }
 
+    
     
     if(!video){
         throw new ApiError(404,"Video Not Found")
