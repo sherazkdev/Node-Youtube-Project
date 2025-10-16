@@ -3,12 +3,15 @@ import cookieParser from "cookie-parser";
 import cors from "cors"
 const app = express();
 
+// Cors origin 
+const Cors_Origins = [process?.env?.CORS_ORIGIN,"http://localhost:5173"];
+
 // MiddleWarse
 app.use( express.json() );
 app.use( express.urlencoded( { extended : true } ) );
 app.use( cookieParser() );
 app.use(cors({
-    origin: process?.env?.CORS_ORIGIN, 
+    origin: Cors_Origins, 
     credentials: true
   }));
 
